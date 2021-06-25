@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%- include ("./headerscript.html") -%>
+
+<link href="../javascripts/tabular/css/tabulator.min.css" rel="stylesheet">
+<script type="text/javascript" src="../javascripts/tabular/js/tabulator.min.js"></script>
+
+
+<style>
+    .dropzone{
+        border: solid 1px #ccc;
+        border-radius: 5px;
+    }
+</style>
+
+</head>
+<body>
+    <%- include ("./header.html") -%>
+    <div class="card-body">
+
+        <div class="position-relative form-group">
+            <label>Bank</label>
+            <select id="cmbBank" class="btn-block select2">
+                <option value="bca">BCA</option>
+                <option value="mandiri">Mandiri</option>
+                <option value="danamon">Danamon</option>
+                <option value="panin">Panin</option>
+            </select>
+        </div>
+        <div class="position-relative form-group">
+            <label for="appname" class="">Drag drop the Excel files (or click to open files)</label>
+            <form   id="myDropzone" action="/file-upload" class="dropzone">
+                <div class="fallback">
+                  <input name="file" type="file" multiple />
+                </div>
+            </form>
+            <div class="position-relative form-group" style="padding: 10px">
+                <button id="btn-clear" type="button" class="btn btn-block btn-primary-2">Clear</button>
+            </div>
+        </div>
+    </div>
+    <div style="width: 95%; display: table; margin-left: 0%;">
+        <div style="width: 70%;display: table-cell;"></div>
+        <div style="width: 30%;display: table-cell;">
+            <button id="btn-next" type="button" class="btn btn-block btn-primary">Next</button>
+        </div>
+    </div>
+    <%- include ("./footer.html") -%>
+</body>
+
+<script>
+var message = "";
+var error = false;
+var popUpError = false;
+var RESPONSE = {};
+Dropzone.options.myDropzone = {
+    init: function() {
+        this.on("processing", function(file) {
+            
+            this.options.url = getUrl();
+            message = "";
+            error = false;
+            popUpError = false;
+            
+        });
+
+        this.on("complete", function(file) {
+            if (this.getUploadingFiles().length === 0 && this.getQueuedFiles().length === 0) {
+                if(error == false)
+                {
+                    //loadGcsObjects();
+                    //window.popWindow.dialog("Upload complete", "Validation" );
+                    
+                    $("#btn-next").removeAttr("disabled")
+                }
+                else
+                {
+                    window.popWindow.dialog(message, "Validation" );
+
+                }
+            }
+
+        });
+
+        this.on("success", function(file, response) {
+            console.log(response);
+            console.log(file)
+
+            if(response.success == false)
+            {
+                
+                //window.popWindow.dialog("Error: " + response.message, "Validation" );
+                error = true;
+                $('.dropzone')[0].dropzone.files.forEach(function(item) { 
+                    if(file.name == item.name)
+                    {
+                        message += response.message + " : '" + item.name + "'<br>"; 
+                        item.previewElement.remove(); 
+                    }
+                });
+            }
+            else {
+                error = false;
+                RESPONSE=response;
+            }
+        })
+    }
+};
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * 
+        charactersLength));
+   }
+   return result;
+}
+
+var FOLDER = null;
+
+function getUrl()
+{
+    var dt = new Date();
+    var project = "dvt-apac-playground-3";
+    var bucket = "input_excel";
+    var folder = $("#cmbBank").val() + "-" + dt.getFullYear() + "" + dt.getMonth() + "" + dt.getDate() + "-" + makeid(5);
+    FOLDER = folder;
+
+    var url = "https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs/" + project + "/" + bucket + "/" + folder;
+    console.log(url);
+    return url;
+}
+
+$(document).ready(function()
+{
+    $("#btn-clear").click(function(){
+        Dropzone.forElement('#myDropzone').removeAllFiles(true)
+    });
+
+    $("#btn-next").attr("disabled", "true")
+    $("#btn-next").click(function(){
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        let btnId = urlParams.get("btnid");
+        location = "/web/excel2?btnid=" + btnId + "&folder=" + FOLDER;
+    })
+})
+</script>
+</html>

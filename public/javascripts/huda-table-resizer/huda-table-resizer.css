@@ -1,0 +1,164 @@
+.tbl-pdf
+{
+  border: solid 2px;
+  border-color: red;
+  border-width: 2px;
+}
+
+.tbl-pdf td{
+  border: solid 2px red;
+  min-height: 10px;
+  height: 16px;
+}
+
+.tbl-pdf th{
+  border: solid 2px red;
+  height: 30px;
+  width: 100px;
+}
+
+.tbl-pdf th{
+  padding: 0%;
+}
+
+.tbl-pdf td{
+  padding: 0%;
+}
+
+.th-dragger-container
+{
+  width: 100%;
+  height: 100%;
+}
+
+.dragger-column-container
+{
+  width: 100%; 
+  height: 90%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dragger-row-container
+{
+  width: 100%; 
+  height: 10%;
+}
+
+.dragger-column
+{
+  width: 3px; 
+  height: 100%; 
+  border: solid 0px #ccc;
+  cursor: col-resize;
+}
+
+.dragger-row
+{
+  width: 100%; 
+  height: 100%; 
+  border: solid 0px #ccc; 
+  cursor: row-resize;
+}
+
+.coladddel-container
+{
+  display: flex; 
+  margin-top: -23px;
+  justify-content: flex-end;
+}
+
+.coladd
+{
+  opacity: 0;
+  cursor: pointer; 
+  width: 20px; 
+  height: 20px; 
+  background: url(/images/add.png) no-repeat; 
+  background-size: auto 100%;
+}
+
+.coladd:hover
+{
+  opacity: .8;
+}
+
+.coldel
+{
+  opacity: 0;
+  cursor: pointer; 
+  width: 20px; 
+  height: 20px; 
+  background: url(/images/minus.png) no-repeat; 
+  background-size: auto 100%;
+}
+
+.coldel:hover
+{
+  opacity: .8;
+}
+
+
+/* row buttons */
+.th-last
+{
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+.th-last-button-dragger
+{
+  min-width: 100%;
+  height: 100%;
+}
+.rowadddel-container
+{
+  height: 100%;
+  display: flex;
+  position: relative;
+}
+
+.rowadd
+{
+  opacity: 0;
+  cursor: pointer; 
+  width: 20px; 
+  height: 20px; 
+  background: url(/images/add.png) no-repeat; 
+  background-size: 100% auto;
+  position:absolute;
+  bottom: 0px;
+}
+
+.rowadd:hover
+{
+  opacity: .8;
+}
+
+.rowdel
+{
+  opacity: 0;
+  cursor: pointer; 
+  width: 20px; 
+  height: 20px; 
+  background: url(/images/minus.png) no-repeat; 
+  background-size: 100% auto;
+  position:absolute;
+  bottom: 0px;
+  left: 20px;
+}
+
+.rowdel:hover
+{
+  opacity: .8;
+}
+
+#drag
+{
+  opacity: .2;
+  cursor: pointer;
+  margin-left: -10px;
+  width: 20px; height: 20px; 
+  background: url(/images/move.png) no-repeat; 
+  background-size: 20px 20px;
+}

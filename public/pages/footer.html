@@ -1,0 +1,89 @@
+
+
+<!-- jQuery -->
+<script src="../admin-lte-3/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+
+
+<script src="../admin-lte-3/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- Select2 -->
+<script src="../admin-lte-3/plugins/select2/js/select2.full.min.js"></script>
+<!-- Bootstrap4 Duallistbox -->
+<script src="../admin-lte-3/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.min.js"></script>
+<!-- InputMask -->
+<script src="../admin-lte-3/plugins/moment/moment.min.js"></script>
+<script src="../admin-lte-3/plugins/inputmask/min/jquery.inputmask.bundle.min.js"></script>
+<!-- date-range-picker -->
+<script src="../admin-lte-3/plugins/daterangepicker/daterangepicker.js"></script>
+<!-- bootstrap color picker -->
+<script src="../admin-lte-3/plugins/bootstrap-colorpicker/js/bootstrap-colorpicker.min.js"></script>
+<!-- Tempusdominus Bootstrap 4 -->
+<script src="../admin-lte-3/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<!-- Bootstrap Switch -->
+<script src="../admin-lte-3/plugins/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+<!-- AdminLTE App -->
+<script src="../admin-lte-3/js/adminlte.min.js"></script>
+
+<script src="../javascripts/jquery-ui/jquery-ui.js"></script>
+
+  
+<script src="../javascripts/datatable/datatables.min.js"></script>
+
+<script src="../javascripts/popupwindow/popWindow.js"></script>
+
+<script src="../pages/config.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    //Initialize Select2 Elements
+    $('.select2').select2()
+
+    //Initialize Select2 Elements
+    $('.select2bs4').select2({
+        theme: 'bootstrap4'
+    })
+
+    $('#reservationdate').datetimepicker({
+        format: 'L'
+    });
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let btnId = urlParams.get("btnid");
+
+    $("#btnNav1").css("opacity", ".5")
+    $("#btnNav2").css("opacity", ".5")
+
+    if(btnId == null)
+        $("#btnNav1").css("opacity", 1)
+    else
+        $("#" + btnId).css("opacity", 1)
+    
+
+});
+</script>
+
+<script>
+
+
+
+
+    function btnNavClick(btn, url)
+    {
+        let btnId = $(btn).attr("id");
+        /*
+        if($("#" + btnId).attr("class").indexOf("btn-primary"))
+        {
+            $("#" + btnId).removeClass("btn-primary");
+            $("#" + btnId).addClass("class", "btn-secondary");
+        }
+        else
+        {
+            $("#" + btnId).removeClass("btn-secondary");
+            $("#" + btnId).addClass("class", "btn-primary");
+        }
+
+        */
+        location = url + "?btnid=" + btnId;
+    }
+</script>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%- include ("./headerscript.html") -%>
+
+<link href="../javascripts/tabular/css/tabulator.min.css" rel="stylesheet">
+<script type="text/javascript" src="../javascripts/tabular/js/tabulator.min.js"></script>
+
+</head>
+<body>
+    <%- include ("./header.html") -%>
+    <div class="card-body">
+
+        <div id="example-table"></div>
+        
+
+    </div>
+    <%- include ("./footer.html") -%>
+</body>
+
+<script>
+    $(document).ready(function(){
+        var tabledata = [
+            {id:1, name:"", progress:"", gender:"", rating:1, col:"", dob:"19/02/1984", car:1},
+            {id:2, name:"", progress:"", gender:"", rating:2, col:"", dob:"14/05/1982", car:true},
+            {id:3, name:"", progress:"", gender:"", rating:0, col:"", dob:"22/05/1982", car:"true"},
+            {id:4, name:"", progress:"", gender:"", rating:1, col:"", dob:"01/08/1980"},
+            {id:5, name:"", progress:"", gender:"", rating:5, col:"", dob:"31/01/1999"},
+            {id:6, name:"", progress:"", gender:"", rating:4, col:"", dob:"12/05/1966", car:1},
+        ];
+
+        //initialize table
+        var table = new Tabulator("#example-table", {
+            data:tabledata, //assign data to table
+            autoColumns:true, //create columns from data field names
+        });
+    })
+</script>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%- include ("./headerscript.html") -%>
+
+
+<script src="../javascripts/pdf/pdf.js"></script>
+<script src="../javascripts/pdf/pdf.worker.js"></script>
+
+<script src="../javascripts/huda-table-resizer/huda-table-resizer.js"></script>
+<link href="../javascripts/huda-table-resizer/huda-table-resizer.css" rel="stylesheet" />
+
+
+
+</head>
+<body>
+    <%- include ("./header.html") -%>
+    <div class="card-body">
+        <div style="width: 100%;">
+            
+            
+        </div>
+
+        <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
+            <div style="width: 70%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
+            </div>
+            <div style="width: 2px;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
+            </div>
+            <div style="width: 2px;"></div>
+            <div style="width: 20%;display: table-cell;">
+                <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
+            </div>
+        </div>
+
+        <div id="pdf-main-container" style=" width: 100%;">
+            <canvas style="margin-left: 10%;" id="pdf-canvas" width="400"></canvas>
+        </div>
+
+
+
+
+        <div id="divPdfTable"></div>
+
+    </div>
+        
+    </div>
+    <div style="width: 95%; display: table; margin-left: 0%; padding: 100px;">
+        <div style="width: 70%;display: table-cell;"></div>
+        <div style="width: 30%;display: table-cell;">
+            <button id="btn-next" type="button" class="btn btn-block btn-primary">Next</button>
+        </div>
+    </div>
+    <%- include ("./footer.html") -%>
+
+</body>
+
+<script>
+
+var DRAG = false;
+var PROJECT = "<%=config.PROJECT %>";
+var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
+var GCS_FOLDER = "<%=config.GCS_FOLDER %>";
+var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+var FILE_URI = "<%=uri %>";
+
+function showPDF2(url, callback)
+{
+    // If absolute URL from the remote server is provided, configure the CORS
+    // header on that server.
+    //var url = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf';
+
+ 
+
+    // Loaded via <script> tag, create shortcut to access PDF.js exports.
+    var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+    // The workerSrc property shall be specified.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
+
+    // Asynchronous download of PDF
+    var loadingTask = pdfjsLib.getDocument(url);
+    loadingTask.promise.then(function(pdf) {
+    console.log('PDF loaded');
+    
+    // Fetch the first page
+    var pageNumber = 1;
+    pdf.getPage(pageNumber).then(function(page) {
+        console.log('Page loaded');
+        
+        var scale = 1.5;
+        var viewport = page.getViewport({scale: scale});
+
+        // Prepare canvas using PDF page dimensions
+        var canvas = document.getElementById('pdf-canvas');
+        var context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render PDF page into canvas context
+        var renderContext = {
+        canvasContext: context,
+        viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+        renderTask.promise.then(function () {
+            console.log('Page rendered');
+            if(callback != null)
+                callback();
+        });
+    });
+    }, function (reason) {
+    // PDF loading error
+    console.error(reason);
+    });
+}
+
+
+
+
+$(document).ready(function()
+{
+    var uri = "<%=uri %>";
+    console.log("uri")
+    console.log(uri)
+
+    //uri = decodeURIComponent(uri);
+    uri = "/web/download/" + uri;
+
+    console.log(uri);
+
+    showPDF2(uri, function()
+    {
+        let uri2 = uri.replace(".pdf", ".json");
+        console.log("uri2");
+        console.log(uri2);
+        $.get(uri2, function(response){
+            if(response != null)
+            {
+                console.log(response)
+                TableResizer.createResizedTableByInfo("divPdfTable", JSON.parse(response));
+                
+            }
+            else
+            {
+                TableResizer.createResizedTable("divPdfTable", 5, 5);
+            }
+        });
+    });
+
+
+    $("#btn-next").on("click", function()
+    {
+        saveTable("divPdfTable", function(){
+            //location = "/web/page3?uri=<%=uri%>";
+        });
+    })
+
+    $("#btn-save-table").off("click");
+    $("#btn-save-table").on("click", function(){
+        saveTable("divPdfTable", function(){
+            alert("Saved");
+        })
+        
+    });
+
+})
+
+
+function saveTable(divId, callback)
+{
+    let info = TableResizer.getTableInformation(divId);
+    console.log(info);
+
+    let filename = decodeURIComponent(FILE_URI).split("/");
+    filename = filename[filename.length - 1];
+    filename = filename.replace("pdf", "json");
+    filename = GCS_FOLDER + "/" + filename;
+    filename = encodeURIComponent(filename)
+    var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filename;
+
+    console.log("create file url");
+    console.log(url);
+
+    let sJson = JSON.stringify({
+        content: JSON.stringify(info)
+    });
+
+    console.log(sJson);
+
+    $.post(url, sJson, function(response){
+        console.log(response);
+        if(callback != null)
+            callback(response);
+    })
+}
+
+
+</script>
+</html>

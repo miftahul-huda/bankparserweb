@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%- include ("./headerscript.html") -%>
+
+<link href="../javascripts/tabular/css/tabulator.min.css" rel="stylesheet">
+<script type="text/javascript" src="../javascripts/tabular/js/tabulator.min.js"></script>
+
+
+</head>
+<body>
+    <%- include ("./header.html") -%>
+    <div class="card-body">
+
+        <div id="processgif"></div>
+
+        <table id="tblFiles">
+            <tr>
+                <th>&nbsp;</th>
+                <th>File</th>
+            </tr>
+        </table>
+        
+    </div>
+    <div style="width: 100%; border-top: solid 1px #ccc; height: 40px;"></div>
+    <div id="divButtons" style="width: 95%; display: table; margin-left: 0%;">
+        <div style="width: 70%;display: table-cell;"></div>
+        <div style="width: 30%;display: table-cell;">
+            <button id="btn-download" type="button" class="btn btn-block btn-primary">Download</button>
+        </div>
+    </div>
+    <%- include ("./footer.html") -%>
+</body>
+
+<script>
+
+var FOLDER = null;
+$(document).ready(function()
+{
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    FOLDER = urlParams.get("folder");
+
+    showAll(false);
+    getAndDisplayGcsFiles();
+    $("#btn-download").click(function(){
+        download();
+        
+    })
+})
+
+function showAll(value)
+{
+    if(value == true)
+    {
+        $("#processgif").hide();
+        $("#divButtons").show();
+        $("#tblFiles").show();
+
+    }
+    else
+    {
+        $("#processgif").show();
+        $("#divButtons").hide();
+        $("#tblFiles").hide();
+    }
+}
+
+function getTotalFiles(files)
+{
+    let counter = 0;
+    files.forEach((file)=>{
+        if(file.name.endsWith("/") == false)
+            counter++;
+    })
+
+    return counter;
+}
+
+function getAndDisplayGcsFiles()
+{
+    getGcsFiles((files) =>{
+
+        let total = getTotalFiles(files);
+
+        if(total >= 3)
+        {
+            displayFiles(files);
+            showAll(true);
+        }
+        else 
+        {
+            showAll(false);
+            setTimeout(getAndDisplayGcsFiles, 1000);
+        }
+        
+    });
+}
+
+function displayFiles(files)
+{
+    files.forEach((file) => {
+
+        if(file.metadata.name.endsWith("/") == false)
+        {
+            var tr = document.createElement("tr");
+            
+            var td = document.createElement("td");
+            $(td).css("padding-right", '5px')
+            $(td).html("<img src='../images/file.png'>");
+            $(tr).append(td);
+
+            var td = document.createElement("td");
+            $(td).html(file.metadata.name);
+            $(tr).append(td);
+            
+            $("#tblFiles").append(tr);
+        }
+    })
+}
+
+function download()
+{
+    window.open("https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs/download-folder/dvt-apac-playground-3/output_excel/" + FOLDER, null)
+}
+
+function getGcsFiles(callback)
+{
+    var url = "https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs-list-public/dvt-apac-playground-3/output_excel/" + FOLDER;
+    
+    console.log("getGcsFiles")
+    console.log(url);
+
+    $.get(url, function(response){
+        console.log(response);
+        if(callback != null)
+            callback(response.payload)
+    });
+
+}
+</script>
+</html>
