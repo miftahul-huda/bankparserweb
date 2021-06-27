@@ -22,7 +22,15 @@
         </div>
 
         <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
-            <div style="width: 70%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-autodetect" type="button" class="btn btn-block btn-secondary">Autodetect</button>
+            </div>
+            <div style="width: 2px;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-clear-table" type="button" class="btn btn-block btn-secondary">Clear table</button>
+            </div>
+            <div style="width: 40%;display: table-cell;"></div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
@@ -31,7 +39,7 @@
                 <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
             </div>
             <div style="width: 2px;"></div>
-            <div style="width: 20%;display: table-cell;">
+            <div style="width: 10%;display: table-cell;">
                 <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
             </div>
         </div>
@@ -39,9 +47,6 @@
         <div id="pdf-main-container" style=" width: 100%;">
             <canvas style="margin-left: 10%;" id="pdf-canvas" width="400"></canvas>
         </div>
-
-
-
 
         <div id="divPdfTable"></div>
 
@@ -66,6 +71,10 @@ var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
 var GCS_FOLDER = "<%=config.GCS_FOLDER %>";
 var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
 var FILE_URI = "<%=uri %>";
+var PDF = null;
+var CUR_PAGE = 1;
+var PAGE=  null;
+var PDFJS = null;
 
 function showPDF2(url, callback)
 {
@@ -73,7 +82,6 @@ function showPDF2(url, callback)
     // header on that server.
     //var url = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf';
 
- 
 
     // Loaded via <script> tag, create shortcut to access PDF.js exports.
     var pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -81,15 +89,30 @@ function showPDF2(url, callback)
     // The workerSrc property shall be specified.
     pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
 
+    PDFJS = pdfjsLib;
+
     // Asynchronous download of PDF
     var loadingTask = pdfjsLib.getDocument(url);
-    loadingTask.promise.then(function(pdf) {
-    console.log('PDF loaded');
     
+    loadingTask.promise.then(function(pdf) {
+        console.log('PDF loaded');
+        PDF = pdf;
+        openPage(PDF, 1, callback);
+
+    }, function (reason) {
+    // PDF loading error
+    console.error(reason);
+    });
+}
+
+
+function openPage(pdf, pageNumber, callback)
+{
     // Fetch the first page
-    var pageNumber = 1;
+    //var pageNumber = 1;
     pdf.getPage(pageNumber).then(function(page) {
         console.log('Page loaded');
+        PAGE = page;
         
         var scale = 1.5;
         var viewport = page.getViewport({scale: scale});
@@ -102,22 +125,18 @@ function showPDF2(url, callback)
 
         // Render PDF page into canvas context
         var renderContext = {
-        canvasContext: context,
-        viewport: viewport
+            canvasContext: context,
+            viewport: viewport
         };
         var renderTask = page.render(renderContext);
         renderTask.promise.then(function () {
+            console.log(canvas.toDataURL('image/jpeg'));
             console.log('Page rendered');
             if(callback != null)
                 callback();
         });
     });
-    }, function (reason) {
-    // PDF loading error
-    console.error(reason);
-    });
 }
-
 
 
 
@@ -134,21 +153,7 @@ $(document).ready(function()
 
     showPDF2(uri, function()
     {
-        let uri2 = uri.replace(".pdf", ".json");
-        console.log("uri2");
-        console.log(uri2);
-        $.get(uri2, function(response){
-            if(response != null)
-            {
-                console.log(response)
-                TableResizer.createResizedTableByInfo("divPdfTable", JSON.parse(response));
-                
-            }
-            else
-            {
-                TableResizer.createResizedTable("divPdfTable", 5, 5);
-            }
-        });
+        retrieveJson();
     });
 
 
@@ -167,35 +172,213 @@ $(document).ready(function()
         
     });
 
+    $("#btn-prev-image").on("click", function(){
+        saveTable("divPdfTable", function()
+        {
+            CUR_PAGE--;
+            if(CUR_PAGE < 1)
+                CUR_PAGE = 1;
+            openPage(PDF, CUR_PAGE);
+            retrieveJson();
+        });
+
+    })
+
+    $("#btn-next-image").on("click", function(){
+        saveTable("divPdfTable", function()
+        {
+            CUR_PAGE++;
+            if(CUR_PAGE > PDF.numPages)
+                CUR_PAGE = PDF.numPages;
+            openPage(PDF, CUR_PAGE);        
+            retrieveJson();
+        });
+
+    })
+
+    $("#btn-autodetect").on("click", function(){
+        //TableResizer.createResizedTable("divPdfTable", 5, 5);
+        autoDetect();
+    })
+
+    $("#btn-clear-table").on("click", function(){
+        TableResizer.clearTable("divPdfTable");
+    })
+
 })
+
+function autoDetect(callback)
+{
+    savePDFImage(function(response)
+    {
+        console.log(response);
+        alert("Save Image")
+        
+    });
+}
+
+function savePDFImage(callback)
+{
+    var page  = PAGE;
+
+    var canvas = document.getElementsByTagName("canvas")[0];
+    let imageData = canvas.toDataURL('image/png');
+
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page" + CUR_PAGE;
+        filename += ".png";
+    let originalFileame = filename;
+        filename = GCS_FOLDER + "/" + filename;
+        filename = encodeURIComponent(filename)
+
+        var ImageURL = imageData;
+        // Split the base64 string in data and contentType
+        var block = ImageURL.split(";");
+        // Get the content type of the image
+        var contentType = block[0].split(":")[1];// In this case "image/gif"
+        // get the real base64 content of the file
+        var realData = block[1].split(",")[1];// In this case "R0lGODlhPQBEAPeoAJosM...."
+
+        // Convert it to a blob to upload
+        var blob = b64toBlob(realData, contentType);
+
+        let form  = document.createElement("form");
+
+        // Create a FormData and append the file with "image" as parameter name
+        var formDataToUpload = new FormData(form);
+        formDataToUpload.append("file", blob, originalFileame);
+
+        var url = UPLOAD_BASE_URL + "/upload/gcs/" + PROJECT + "/" + GCS_BUCKET + "/images";
+
+        // Submit Form and upload file
+        $.ajax({
+                    url:url,
+                    data: formDataToUpload,// the formData function is available in almost all new browsers.
+                    type:"POST",
+                    contentType:false,
+                    processData:false,
+                    cache:false,
+                    dataType:"json", // Change this according to your response from the server.
+                    error:function(err){
+                        console.error(err);
+                    },
+                    success:function(data){
+                        console.log(data);
+                        if(callback != null)
+                            callback(data);
+                    },
+                    complete:function(){
+                        
+                        console.log("Request finished.");
+                    }
+                });
+    
+    //console.log(imageData);
+}
+
+function retrieveJson( callback)
+{
+
+    TableResizer.clearTable("divPdfTable")
+    let uri = "/web/download/" + FILE_URI;
+
+    let uri2 = uri.replace(".pdf", "");
+    uri2 += "-page" + CUR_PAGE + ".json";
+    
+    console.log("uri2");
+    console.log(uri2);
+    $.get(uri2, function(response){
+        let isJson = false;
+        try{
+            
+            JSON.parse(response);
+            isJson = true;
+        }
+        catch(e)
+        {
+            isJson = false;
+        }
+        
+        if(response != null && isJson)
+        {
+            console.log(response)
+            TableResizer.createResizedTableByInfo("divPdfTable", JSON.parse(response));
+        }
+        else
+        {
+            TableResizer.clearTable("divPdfTable");
+            //TableResizer.createResizedTable("divPdfTable", 5, 5);
+        }
+    });
+}
 
 
 function saveTable(divId, callback)
 {
-    let info = TableResizer.getTableInformation(divId);
-    console.log(info);
+    if($("#" + divId).html() != "")
+    {
+        let info = TableResizer.getTableInformation(divId);
+        console.log(info);
 
-    let filename = decodeURIComponent(FILE_URI).split("/");
-    filename = filename[filename.length - 1];
-    filename = filename.replace("pdf", "json");
-    filename = GCS_FOLDER + "/" + filename;
-    filename = encodeURIComponent(filename)
-    var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filename;
+        let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace("pdf", "json");
+        let tmpfilename = filename.replace(".json", "");
+        tmpfilename += "-page" + CUR_PAGE;
+        tmpfilename += ".json";
+        filename = tmpfilename;
+        filename = GCS_FOLDER + "/" + filename;
+        filename = encodeURIComponent(filename)
+        var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filename;
 
-    console.log("create file url");
-    console.log(url);
+        console.log("create file url");
+        console.log(url);
 
-    let sJson = JSON.stringify({
-        content: JSON.stringify(info)
-    });
+        let sJson = JSON.stringify({
+            content: JSON.stringify(info)
+        });
 
-    console.log(sJson);
+        console.log(sJson);
 
-    $.post(url, sJson, function(response){
-        console.log(response);
+        $.post(url, sJson, function(response){
+            console.log(response);
+            if(callback != null)
+                callback(response);
+        })
+
+    }
+    else
+    {
         if(callback != null)
-            callback(response);
-    })
+                callback();
+    }
+}
+
+
+function b64toBlob(b64Data, contentType, sliceSize) {
+        contentType = contentType || '';
+        sliceSize = sliceSize || 512;
+
+        var byteCharacters = atob(b64Data);
+        var byteArrays = [];
+
+        for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+            var byteNumbers = new Array(slice.length);
+            for (var i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+
+            var byteArray = new Uint8Array(byteNumbers);
+
+            byteArrays.push(byteArray);
+        }
+
+      var blob = new Blob(byteArrays, {type: contentType});
+      return blob;
 }
 
 

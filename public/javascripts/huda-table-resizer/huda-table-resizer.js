@@ -496,6 +496,10 @@ var TableResizer = {
     
         return info;
     }
-    
+    ,
+    clearTable: function(divId)
+    {
+        $("#" + divId).html("");
+    }
 
 }
