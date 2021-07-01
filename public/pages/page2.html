@@ -160,7 +160,7 @@ $(document).ready(function()
     $("#btn-next").on("click", function()
     {
         saveTable("divPdfTable", function(){
-            //location = "/web/page3?uri=<%=uri%>";
+            location = "/web/page3?uri=<%=uri%>";
         });
     })
 
@@ -212,9 +212,41 @@ function autoDetect(callback)
     savePDFImage(function(response)
     {
         console.log(response);
-        alert("Save Image")
+        let imageurl = response.payload;
+        imageurl = imageurl.replace("gs://", "https://storage.googleapis.com/");
+        console.log(imageurl);
+        
+        let url = "/table/parse/" + encodeURIComponent(imageurl);
+        console.log(url);
+        $.get(url, function(response){
+            console.log(response);
+            let items = response.payload;
+            let prevItem = null;
+            let colWidths = [];
+            items.forEach((item)=>{
+                if(prevItem != null)
+                {
+                    colWidths.push( item.boundaryX - prevItem.boundaryX )
+                }
+                prevItem = item;
+            })
+            colWidths.push( items[items.length - 1].w + 30 );
+            console.log(colWidths);
+            TableResizer.createResizedTable("divPdfTable", colWidths.length, 10);
+            TableResizer.resizeColumns("divPdfTable", colWidths);
+        });
         
     });
+}
+
+function getCurrentImageFilename()
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page" + CUR_PAGE;
+        filename += ".png";
+    return filename;
 }
 
 function savePDFImage(callback)

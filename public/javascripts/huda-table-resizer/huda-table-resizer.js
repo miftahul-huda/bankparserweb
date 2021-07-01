@@ -35,6 +35,15 @@ var TableResizer = {
         return tbl;
     }
     ,
+    resizeColumns: function(divId, colWidths)
+    {
+        var table = $("#" + divId).find("table")[0];
+        for(var i = 0; i < colWidths.length; i++)
+        {
+            $(table).find("th[col-idx="  + i + "]").width(colWidths[i]);
+        }
+    }
+    ,
     setAllIdx: function(tbl)
     {
         let prevIdx = -1;

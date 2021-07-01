@@ -13,6 +13,7 @@ var Initialization = require("./initialization")
 
 
 const port = process.env.APPLICATION_PORT;
+console.log(port)
 
 
 var ejs = require('ejs'); 
@@ -32,7 +33,7 @@ app.use(session({
     dataset: new Datastore(),
     kind: 'express-sessions',
   }),
-  secret: 'authentication',saveUninitialized: true,resave: false}));
+  secret: 'bankparserweb',saveUninitialized: true,resave: false}));
 
 //Dynamic routing based on configuration
 const fs = require('fs');
@@ -83,7 +84,7 @@ app.listen(port)
 
 
 
-Initialization.initializeDatabase();
+//Initialization.initializeDatabase();
 
 console.log("Danamon POC server on  port : " + port)
 
