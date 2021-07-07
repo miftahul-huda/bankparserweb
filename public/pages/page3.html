@@ -20,7 +20,24 @@
     <div class="card-body">
 
         <div id="processgif"></div>
-
+        <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
+            
+            <div style="width: 10%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;" id="page-info"></div>
+            <div style="width: 50%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
+            </div>
+            <div style="width: 2px;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
+            </div>
+            <div style="width: 2px;"></div>
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-save-csv" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
+            </div>
+        </div>
+        <div style="height: 50px;"></div>
         <table id="tbl-result">
             <tr>
                 <th>Tanggal</th>
@@ -67,9 +84,23 @@
 </body>
 
 <script>
+var PROJECT = "<%=config.PROJECT %>";
+var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
+var GCS_PDF_FOLDER = "<%=config.GCS_PDF_FOLDER %>";
+var GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
+var GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
+var GCS_CSV_FOLDER = "<%=config.GCS_CSV_FOLDER %>";
+var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+var FILE_URI = "<%=uri %>";
+var CUR_PAGE = 1;
+var HEADERS = "<%=headers %>";
+var TYPE = "<%=type %>";
+var TOTAL_PAGE = "<%=totalPage %>";
+var PREV_PAGE = 0;
 
 $(document).ready(function()
 {
+
     $("#processgif").show();
     $("#tbl-result").hide();
     $("#btn-next").hide();
@@ -77,19 +108,395 @@ $(document).ready(function()
 
     $("#btn-back").click(function(){
         location = "/web"
+    });
+
+    $("#btn-prev-image").on("click", function(){
+
+        CUR_PAGE--;
+        console.log("CUR_PAGE");
+        console.log(CUR_PAGE);
+        if(CUR_PAGE < 1)
+        {
+            LAST_COUNTER = 0;
+            LAST_DATA_LENGTH = 0;
+            CUR_PAGE = 1;
+        }   
+
+
+        $("#page-info").html("Page : "  + (CUR_PAGE))
+        
+        run(CUR_PAGE);
+
     })
-    run();
+
+    $("#btn-next-image").on("click", function(){
+
+        CUR_PAGE++;
+        console.log("CUR_PAGE");
+        console.log(CUR_PAGE);
+        if(CUR_PAGE > TOTAL_PAGE)
+            CUR_PAGE = TOTAL_PAGE;
+        
+        $("#page-info").html("Page : " + (CUR_PAGE))
+        run(CUR_PAGE);
+
+    })
+
+    $("#btn-save-csv").click(function(){
+        let csv = toCsv(DATATABLE);
+
+        console.log(csv)
+
+        saveCsv(CUR_PAGE, csv, function(response){
+            console.log(response)
+            alert("Saved")
+        });
+    });
+
+    $("#page-info").html("Page : " + (CUR_PAGE))  
+    run(CUR_PAGE);
 })
 
 
-function run()
+function getImageFilename(page)
 {
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-" + page;
+        filename += ".png";
+    return filename;
+}
+
+function getOriJsonFilename(page)
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-ori-" + page;
+        filename += ".json";
+    return filename;
+}
+function getCsvFilename(page)
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-" + page;
+        filename += ".csv";
+        filename = TYPE + "_" + filename;
+    return filename;
+}
+
+
+function getOriJsonUrl(page)
+{
+    let filename = getOriJsonFilename(page);
+    return getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_JSON_FOLDER + "/" +  filename;
+}
+
+function getImageUrl(page)
+{
+    let filename = getImageFilename(page);
+    return getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_IMAGE_FOLDER + "/" +  filename;
+}
+
+function getBaseFileUri()
+{
+    let uri = decodeURIComponent(FILE_URI);
+    uri = uri.replace("http://", "");
+
+    uri = uri.split("/");
+    let host = uri[0];
+    uri = "http://" + host;
+    return uri;
+}
+
+function imageBox2Text(page, callback)
+{
+
+    let jsonFileUrl = getOriJsonUrl(page);
+    jsonFileUrl = encodeURIComponent(jsonFileUrl);
+
+    let imagefileUrl = getImageUrl(page);
+    imagefileUrl =  encodeURIComponent(imagefileUrl);
+
+    console.log("Download Json")
+    console.log(jsonFileUrl);
+
+    downloadJson(jsonFileUrl, function(json){
+        console.log("JSON " + jsonFileUrl);
+        console.log(json);
+
+        json = { positions: json.rows }
+        json = JSON.stringify(json)
+        console.log("Json to send to parse")
+        console.log(json);
+
+        let url = "/table/parse-by-boxes/" + imagefileUrl;
+        $.post(url, json, function(response){
+            
+            if(callback != null)
+                callback(response);
+        })
+    })
+}
+
+function downloadJson(jsonFilename, callback)
+{
+    $.get("/web/download/" + jsonFilename, function(response){
+        if(callback != null)
+            callback(response)
+    })
+}
+
+
+function saveCsv(page, data, callback)
+{
+    let filepath = getCsvFilename(page)
+    filepath = GCS_CSV_FOLDER + "/" + filepath;
+    filepath = encodeURIComponent(filepath);
+
+    var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filepath;
+    console.log("Save csv url")
+    console.log(url);   
+
+    let sJson = JSON.stringify({
+        content: data
+    });
+
+    $.post(url, sJson, function(response){
+        console.log(response);
+        if(callback != null)
+            callback(response);
+    })
+}
+
+var DATATABLE = null;
+
+function csv2Datatable(csvStr)
+{
+    let data = [];
+    let lines = csvStr.split("\n");
+    lines.forEach((line) => {
+        let row = [];
+        if(line.trim() != "")
+        {
+            let cells = line.split("\",\"");
+            cells.forEach((cell)=>{
+                let text = cell.replace(/\"/gi, "");
+                text = text.replace(/\r/gi, "");
+                row.push(text);
+            })
+            data.push(row);
+        }
+
+    })
+
+    return data;
+}
+
+function run(page)
+{
+    $("#processgif").show();
+
+    let filepath = getCsvFilename(page)
+    filepath = GCS_CSV_FOLDER + "/" + filepath;
+    filepath = getBaseFileUri() + "/" + GCS_BUCKET + "/" + filepath;
+    console.log(filepath)
+    filepath = encodeURIComponent(filepath);
+
+    console.log("Download " + filepath)
+    downloadJson(filepath, function(result)
+    {
+        console.log(result)
+        if(result.indexOf("<?xml") == -1)
+        {
+            let data = csv2Datatable(result);
+            console.log(data);
+            data = assembleData2(data);
+            DATATABLE = data;
+            displayResult(DATATABLE)
+            $("#processgif").hide();
+        }
+        else
+        {
+            console.log("CSV doesn't exist. Parsing ....")
+            imageBox2Text(page, function(response)
+            {
+                console.log("RESPONSE FROM PARSE");
+                console.log(response);
+
+                let data =  assembleData(HEADERS, response.payload);
+
+                console.log("assembleData");
+                console.log(data);
+
+                DATATABLE = toTable(data);
+                displayResult(DATATABLE)
+                
+                $("#processgif").hide();
+
+            })
+        }
+
+    })
+
+    
+    
+    /*
     setTimeout(function(){
         $("#processgif").hide();
         $("#tbl-result").show();
         $("#btn-next").show();
         $("#btn-back").show();
-    }, 5000 )
+    }, 5000 )*/
+}
+
+var LAST_COUNTER = 0;
+var LAST_DATA_LENGTH = 0;
+function assembleData(headers, data)
+{
+    
+    if(PREV_PAGE > CUR_PAGE)
+    {
+        LAST_COUNTER = LAST_COUNTER - LAST_DATA_LENGTH - data.length;
+        
+    }
+        
+    let heads = headers.split(",");
+    let headss = [];
+
+    heads.forEach((head)=>{
+        let item = { text: head };
+        headss.push(item);
+    })
+
+    data.splice(0, 0, headss);
+
+    let counter = 0;
+    for(var i = 0; i < data.length; i++)
+    {
+        let row = data[i];
+        let counter2 = LAST_COUNTER + counter;
+        if(counter  == 0)
+            row.splice(0,0, { text: "" });
+        else
+            row.splice(0,0, { text: counter2 });
+        counter++;
+    }
+
+    //if(PREV_PAGE < CUR_PAGE)
+    LAST_COUNTER = LAST_COUNTER + data.length - 1;
+    
+    
+    LAST_DATA_LENGTH = data.length - 1;
+    PREV_PAGE = CUR_PAGE;
+
+    
+
+    return data;
+}
+
+function assembleData2( data)
+{
+    if(CUR_PAGE != PREV_PAGE && CUR_PAGE != 0)
+    {
+        if(PREV_PAGE > CUR_PAGE)
+        {
+            LAST_COUNTER = LAST_COUNTER - LAST_DATA_LENGTH - (data.length - 1);
+            
+        }
+
+        console.log(LAST_COUNTER)   
+
+
+        //if(PREV_PAGE < CUR_PAGE)
+        LAST_COUNTER = LAST_COUNTER + data.length - 1;
+        
+        LAST_DATA_LENGTH = data.length - 1;
+        PREV_PAGE = CUR_PAGE;
+
+        console.log(LAST_COUNTER);
+    }
+
+    return data;
+}
+
+function toTable(data)
+{
+    let rows = [];
+    let totalRows = data.length;
+    let totalCols = data[0].length;
+
+    for(var i = 0; i < totalRows; i++)
+    {
+        let row = [];
+        for(var j = 0; j < totalCols; j++)
+        {
+            row.push(data[i][j].text);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+function toCsv(table)
+{
+    console.log("TABLE")
+    console.log(table);
+
+    let stable = "";
+    table.forEach((row)=>{
+
+        row.forEach((cell)=>{
+            stable += "\"" + cell + "\",";
+        })
+        if(stable.length > 0)
+            stable = stable.substr(0, stable.length - 1);
+        stable += "\r\n"
+    })
+
+    return stable;
+}
+
+function displayResult(data)
+{
+    console.log("display result")
+    let tbl = $("#tbl-result");
+    $(tbl).html("");
+
+    data.forEach((row)=>{
+        
+        let tr = document.createElement("tr")
+        row.forEach((cell)=>{
+           
+            let td = document.createElement("td");
+            $(td).html(cell);
+            $(tr).append(td);
+        })
+
+        $(tbl).append(tr);
+    })
+
+    $(tbl).show();
+}
+
+function rows2boxes(rows)
+{
+    let boexes = [];
+    let rowIdx = 0;
+    let colIdx = 0;
+    rows.forEach((row)=>{
+        colIdx = 0;
+        row.forEach((cell)=>{
+            boexes.push({ x: cell.x, y: cell.y, w: cell.w, h: cell.h, col: cell.col, row: cell.row, text: cell.text })
+            colIdx++;
+        })
+        rowIdx++;
+    })
+
+    return boexes;
 }
 
 </script>

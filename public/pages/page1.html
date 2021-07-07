@@ -18,7 +18,11 @@
 <body>
     <%- include ("./header.html") -%>
     <div class="card-body">
-
+        <div class="position-relative form-group">
+            <select id="doc-template" class="btn-block select2">
+                <option value="bca|Tanggal,Keterangan1,Keterangan2,CBG,Mutasi,Saldo" >BCA</option>
+            </select>
+        </div>
         <div class="position-relative form-group">
             <label for="appname" class="">Drag drop the PDF files (or click to open files)</label>
             <form   id="myDropzone" action="/file-upload" class="dropzone">
@@ -103,7 +107,7 @@ function getUrl()
 {
     var project = "<%=config.PROJECT %>";
     var bucket = "<%=config.GCS_BUCKET %>";
-    var folder = "<%=config.GCS_FOLDER %>";
+    var folder = "<%=config.GCS_PDF_FOLDER %>";
     var baseUrl = "<%=config.UPLOAD_BASE_URL %>";
 
     var url = baseUrl + "/upload/gcs/" + project + "/" + bucket + "/" + folder;
@@ -126,7 +130,13 @@ $(document).ready(function()
         uri = uri.replace("gs://", "http://storage.googleapis.com/");
         uri = encodeURIComponent(uri);
 
-        location = "/web/page2?uri=" + encodeURIComponent( uri);
+        let vv = $("#doc-template").val();
+        vv = vv.split("|");
+        let cols = vv[1];
+        let template = vv[0];
+        //alert(cols)
+
+        location = "/web/page2?type=" + template + "&headers=" + cols + "&uri=" + encodeURIComponent( uri);
     })
 })
 </script>

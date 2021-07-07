@@ -20,6 +20,7 @@
             
             
         </div>
+        <div id="processgif"></div>
 
         <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
             <div style="width: 10%;display: table-cell;"></div>
@@ -30,7 +31,9 @@
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-clear-table" type="button" class="btn btn-block btn-secondary">Clear table</button>
             </div>
-            <div style="width: 40%;display: table-cell;"></div>
+            <div style="width: 30%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;" id="page-info">Page</div>
+            <div style="width: 2px;"></div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
@@ -43,7 +46,6 @@
                 <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
             </div>
         </div>
-
         <div id="pdf-main-container" style=" width: 100%;">
             <canvas style="margin-left: 10%;" id="pdf-canvas" width="400"></canvas>
         </div>
@@ -68,13 +70,17 @@
 var DRAG = false;
 var PROJECT = "<%=config.PROJECT %>";
 var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
-var GCS_FOLDER = "<%=config.GCS_FOLDER %>";
+var GCS_PDF_FOLDER = "<%=config.GCS_PDF_FOLDER %>";
+var GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
+var GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
 var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
 var FILE_URI = "<%=uri %>";
 var PDF = null;
 var CUR_PAGE = 1;
 var PAGE=  null;
 var PDFJS = null;
+var HEADERS = "<%=headers %>";
+var TYPE = "<%=type %>";
 
 function showPDF2(url, callback)
 {
@@ -142,6 +148,7 @@ function openPage(pdf, pageNumber, callback)
 
 $(document).ready(function()
 {
+    $("#processgif").hide();
     var uri = "<%=uri %>";
     console.log("uri")
     console.log(uri)
@@ -151,16 +158,23 @@ $(document).ready(function()
 
     console.log(uri);
 
+    $("#processgif").show();
     showPDF2(uri, function()
     {
         retrieveJson();
+        $("#processgif").hide();
     });
 
 
     $("#btn-next").on("click", function()
     {
+        $("#processgif").show();
         saveTable("divPdfTable", function(){
-            location = "/web/page3?uri=<%=uri%>";
+            let totalPage = PDF.numPages;
+            let url = "/web/page3?type=" + TYPE + "&totalpage=" + totalPage + "&headers=" + HEADERS + "&uri=<%=uri%>";
+
+            $("#processgif").hide();
+            location = url;
         });
     })
 
@@ -176,8 +190,11 @@ $(document).ready(function()
         saveTable("divPdfTable", function()
         {
             CUR_PAGE--;
+            console.log("CUR_PAGE");
+            console.log(CUR_PAGE);
             if(CUR_PAGE < 1)
                 CUR_PAGE = 1;
+            $("#page-info").html("Page : " + CUR_PAGE);
             openPage(PDF, CUR_PAGE);
             retrieveJson();
         });
@@ -187,9 +204,13 @@ $(document).ready(function()
     $("#btn-next-image").on("click", function(){
         saveTable("divPdfTable", function()
         {
+            TableResizer.clearTable("divPdfTable")
             CUR_PAGE++;
+            console.log("CUR_PAGE");
+            console.log(CUR_PAGE);
             if(CUR_PAGE > PDF.numPages)
                 CUR_PAGE = PDF.numPages;
+            $("#page-info").html("Page : " + CUR_PAGE);
             openPage(PDF, CUR_PAGE);        
             retrieveJson();
         });
@@ -205,10 +226,16 @@ $(document).ready(function()
         TableResizer.clearTable("divPdfTable");
     })
 
+    $("#page-info").html("Page : " + CUR_PAGE);
+
 })
+
+var TABLELEFT = 207;
+var TABLETOP = 586;
 
 function autoDetect(callback)
 {
+    $("#processgif").show();
     savePDFImage(function(response)
     {
         console.log(response);
@@ -220,23 +247,63 @@ function autoDetect(callback)
         console.log(url);
         $.get(url, function(response){
             console.log(response);
-            let items = response.payload;
-            let prevItem = null;
-            let colWidths = [];
-            items.forEach((item)=>{
-                if(prevItem != null)
-                {
-                    colWidths.push( item.boundaryX - prevItem.boundaryX )
-                }
-                prevItem = item;
-            })
-            colWidths.push( items[items.length - 1].w + 30 );
-            console.log(colWidths);
-            TableResizer.createResizedTable("divPdfTable", colWidths.length, 10);
-            TableResizer.resizeColumns("divPdfTable", colWidths);
+
+            if(response.success)
+            {
+                resizeTableColumns(response.payload.xBoxes, response.payload.yBoxes)
+                resizeTableRows(response.payload.xBoxes, response.payload.yBoxes)
+
+                $("#divPdfTable").css("left", TABLELEFT)
+                $("#divPdfTable").css("top", TABLETOP)
+            }
+            else
+            {
+                alert("Autodetect fail")
+                TableResizer.createResizedTable("divPdfTable", 7, 10);
+                $("#divPdfTable").css("left", TABLELEFT)
+                $("#divPdfTable").css("top", TABLETOP)
+            }
+
+
+            $("#processgif").hide();
         });
         
     });
+}
+
+function resizeTableColumns(xBoxes, yBoxes)
+{
+    let rowcount = yBoxes.length;
+    let prevItem = null;
+    let colWidths = [];
+    xBoxes.forEach((item)=>{
+        if(prevItem != null)
+        {
+            colWidths.push( item.boundaryX - prevItem.boundaryX )
+        }
+        prevItem = item;
+    })
+    colWidths.push( xBoxes[xBoxes.length - 1].w + 30 );
+    console.log(colWidths);
+    TableResizer.createResizedTable("divPdfTable", colWidths.length, rowcount);
+    TableResizer.resizeColumns("divPdfTable", colWidths);
+}
+
+function resizeTableRows(xBoxes, yBoxes)
+{
+    let rowcount = yBoxes.length;
+    let prevItem = null;
+    let rowHeights = [];
+    yBoxes.forEach((item)=>{
+        if(prevItem != null)
+        {
+            rowHeights.push( item.y - prevItem.y - 5)
+        }
+        prevItem = item;
+    })
+    //rowHeights.push( items[items.length - 1].w + 30 );
+    console.log(rowHeights);
+    TableResizer.resizeRows("divPdfTable", rowHeights);
 }
 
 function getCurrentImageFilename()
@@ -244,99 +311,114 @@ function getCurrentImageFilename()
     let filename = decodeURIComponent(FILE_URI).split("/");
         filename = filename[filename.length - 1];
         filename = filename.replace(".pdf", "");
-        filename += "-page" + CUR_PAGE;
+        filename += "-page-" + CUR_PAGE;
         filename += ".png";
     return filename;
 }
 
 function savePDFImage(callback)
 {
+ 
     var page  = PAGE;
 
     var canvas = document.getElementsByTagName("canvas")[0];
     let imageData = canvas.toDataURL('image/png');
 
-    let filename = decodeURIComponent(FILE_URI).split("/");
-        filename = filename[filename.length - 1];
-        filename = filename.replace(".pdf", "");
-        filename += "-page" + CUR_PAGE;
-        filename += ".png";
-    let originalFileame = filename;
-        filename = GCS_FOLDER + "/" + filename;
-        filename = encodeURIComponent(filename)
+    let filename = getCurrentImageFilename();
+    let originalFilename = filename;
+ 
 
-        var ImageURL = imageData;
-        // Split the base64 string in data and contentType
-        var block = ImageURL.split(";");
-        // Get the content type of the image
-        var contentType = block[0].split(":")[1];// In this case "image/gif"
-        // get the real base64 content of the file
-        var realData = block[1].split(",")[1];// In this case "R0lGODlhPQBEAPeoAJosM...."
+    var ImageURL = imageData;
+    // Split the base64 string in data and contentType
+    var block = ImageURL.split(";");
+    // Get the content type of the image
+    var contentType = block[0].split(":")[1];// In this case "image/gif"
+    // get the real base64 content of the file
+    var realData = block[1].split(",")[1];// In this case "R0lGODlhPQBEAPeoAJosM...."
 
-        // Convert it to a blob to upload
-        var blob = b64toBlob(realData, contentType);
+    // Convert it to a blob to upload
+    var blob = b64toBlob(realData, contentType);
 
-        let form  = document.createElement("form");
+    let form  = document.createElement("form");
 
-        // Create a FormData and append the file with "image" as parameter name
-        var formDataToUpload = new FormData(form);
-        formDataToUpload.append("file", blob, originalFileame);
+    // Create a FormData and append the file with "image" as parameter name
+    var formDataToUpload = new FormData(form);
+    formDataToUpload.append("file", blob, originalFilename);
 
-        var url = UPLOAD_BASE_URL + "/upload/gcs/" + PROJECT + "/" + GCS_BUCKET + "/images";
+    var url = UPLOAD_BASE_URL + "/upload/gcs/" + PROJECT + "/" + GCS_BUCKET + "/" + GCS_IMAGE_FOLDER;
 
-        // Submit Form and upload file
-        $.ajax({
-                    url:url,
-                    data: formDataToUpload,// the formData function is available in almost all new browsers.
-                    type:"POST",
-                    contentType:false,
-                    processData:false,
-                    cache:false,
-                    dataType:"json", // Change this according to your response from the server.
-                    error:function(err){
-                        console.error(err);
-                    },
-                    success:function(data){
-                        console.log(data);
-                        if(callback != null)
-                            callback(data);
-                    },
-                    complete:function(){
-                        
-                        console.log("Request finished.");
-                    }
-                });
+    // Submit Form and upload file
+    $.ajax({
+                url:url,
+                data: formDataToUpload,// the formData function is available in almost all new browsers.
+                type:"POST",
+                contentType:false,
+                processData:false,
+                cache:false,
+                dataType:"json", // Change this according to your response from the server.
+                error:function(err){
+                    console.error(err);
+                },
+                success:function(data){
+                    console.log(data);
+                    if(callback != null)
+                        callback(data);
+                },
+                complete:function(){
+                    
+                    console.log("Request finished.");
+                }
+            });
     
     //console.log(imageData);
 }
 
+function redirectPost(url, param)
+{
+    var form = $('<form action="' + url + '" method="post">' +
+    '<input type="text" name="parameter" value="' + JSON.stringify(param) + '" />' +
+    '</form>');
+    $('body').append(form);
+    form.submit();
+}
+
+function getBaseFileUri()
+{
+    let uri = decodeURIComponent(FILE_URI);
+    uri = uri.replace("http://", "");
+
+    uri = uri.split("/");
+    let host = uri[0];
+    uri = "http://" + host;
+    return uri;
+}
+
 function retrieveJson( callback)
 {
+    let jsonFilename =  getJsonFilename();
+    let downloadUrl = getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_JSON_FOLDER + "/" + jsonFilename;
+    downloadUrl = encodeURIComponent(downloadUrl);
 
     TableResizer.clearTable("divPdfTable")
-    let uri = "/web/download/" + FILE_URI;
+    let uri = "/web/download/" + downloadUrl;
 
-    let uri2 = uri.replace(".pdf", "");
-    uri2 += "-page" + CUR_PAGE + ".json";
-    
-    console.log("uri2");
-    console.log(uri2);
-    $.get(uri2, function(response){
+    console.log("retrieveJson")
+    console.log(uri);
+
+    $.get(uri, function(response){
         let isJson = false;
-        try{
-            
-            JSON.parse(response);
+        console.log(response)
+
+        if( typeof response == 'object')
             isJson = true;
-        }
-        catch(e)
-        {
+        else
             isJson = false;
-        }
+        
         
         if(response != null && isJson)
         {
             console.log(response)
-            TableResizer.createResizedTableByInfo("divPdfTable", JSON.parse(response));
+            TableResizer.createResizedTableByInfo("divPdfTable", response);
         }
         else
         {
@@ -347,44 +429,107 @@ function retrieveJson( callback)
 }
 
 
+function rowsToBoxes(rows)
+{
+    let boexes = [];
+    rows.forEach((row)=>{
+        row.forEach((cell)=>{
+            boexes.push({ x: cell.x, y: cell.y, w: cell.width, h: cell.height })
+        })
+    })
+
+    return boexes;
+}
+
+function getJsonFilename()
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+    filename = filename[filename.length - 1];
+    filename = filename.replace("pdf", "json");
+    let tmpfilename = filename.replace(".json", "");
+    tmpfilename += "-page-" + CUR_PAGE;
+    tmpfilename += ".json";
+    filename = tmpfilename;
+
+    return filename;
+}
+
+function getOriJsonFilename()
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+    filename = filename[filename.length - 1];
+    filename = filename.replace("pdf", "json");
+    let tmpfilename = filename.replace(".json", "");
+    tmpfilename += "-page-ori-" + CUR_PAGE;
+    tmpfilename += ".json";
+    filename = tmpfilename;
+    return filename;
+}
+
+function uploadJsonFile(filename, content, callback)
+{
+    let filepath = GCS_JSON_FOLDER + "/" + filename;
+    filepath = encodeURIComponent(filepath);
+
+    var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filepath;
+    console.log("create file url");
+    console.log(url);
+
+    let sJson = JSON.stringify({
+        content: JSON.stringify(content)
+    });
+
+    $.post(url, sJson, function(response){
+        console.log(response);
+        if(callback != null)
+            callback(response);
+    })
+
+}
+
+function getTableInformationOriginal(divId)
+{
+    let canvasX = $("#pdf-canvas").position().left;
+    let canvasY = $("#pdf-canvas").position().top;
+    let containerWidth = $("#pdf-main-container").width();
+    canvasX = 11/100 * $(document).width();
+
+    let info2 = TableResizer.getTableInformation(divId, { marginLeft: canvasX, marginTop: canvasY});
+    return info2;
+
+}
+
 function saveTable(divId, callback)
 {
     if($("#" + divId).html() != "")
     {
+
+        $("#processgif").show();
         let info = TableResizer.getTableInformation(divId);
-        console.log(info);
+        let info2 = getTableInformationOriginal(divId);
 
-        let filename = decodeURIComponent(FILE_URI).split("/");
-        filename = filename[filename.length - 1];
-        filename = filename.replace("pdf", "json");
-        let tmpfilename = filename.replace(".json", "");
-        tmpfilename += "-page" + CUR_PAGE;
-        tmpfilename += ".json";
-        filename = tmpfilename;
-        filename = GCS_FOLDER + "/" + filename;
-        filename = encodeURIComponent(filename)
-        var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filename;
+        let boxes = rowsToBoxes(info2.rows);
 
-        console.log("create file url");
-        console.log(url);
+        console.log("========BOXES START==========")
+        console.log(JSON.stringify(boxes));
+        console.log("========BOXES END ==========")
 
-        let sJson = JSON.stringify({
-            content: JSON.stringify(info)
-        });
-
-        console.log(sJson);
-
-        $.post(url, sJson, function(response){
-            console.log(response);
-            if(callback != null)
-                callback(response);
+        let filename = getJsonFilename();
+        uploadJsonFile(filename, info, function()
+        {
+            filename = getOriJsonFilename();
+            uploadJsonFile(filename, info2, function(){
+                $("#processgif").hide();
+                if(callback != null)
+                    callback();
+            });
+            
         })
-
     }
     else
     {
         if(callback != null)
-                callback();
+            callback();
     }
 }
 

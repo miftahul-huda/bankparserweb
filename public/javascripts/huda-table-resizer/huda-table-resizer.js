@@ -44,6 +44,15 @@ var TableResizer = {
         }
     }
     ,
+    resizeRows: function(divId, rowHeights)
+    {
+        var table = $("#" + divId).find("table")[0];
+        for(var i = 0; i < rowHeights.length; i++)
+        {
+            $(table).find("td[row-idx="  + i + "]").height(rowHeights[i]);
+        }
+    }
+    ,
     setAllIdx: function(tbl)
     {
         let prevIdx = -1;
@@ -315,7 +324,8 @@ var TableResizer = {
             }
             if(pressedrow) {
                 let hh  = parseFloat( startHeight)+(e.pageY-startY);
-                $(start).height(hh);
+                let rowIdx = $(start).attr("row-idx");
+                $("td[row-idx=" + rowIdx + "]").height(hh);
             }
         });
         
@@ -460,43 +470,97 @@ var TableResizer = {
         $("#drag").css("cursor", "pointer");
     }
     ,
-    getTableInformation: function(divId)
+    getTableInformation: function(divId, opt)
     {
         var table = $("#" + divId).find("table")[0];
     
         var info = {};
-        info.posY = $(table).offset().top;
-        info.posX = $(table).offset().left;
-        info.containerPosY = $("#" + divId).offset().top;
-        info.containerPosX = $("#" + divId).offset().left;
-        info.width = $(table).css("width");
-        info.width = $(table).css("height");
+        info.posY = parseFloat($(table).offset().top);
+        info.posX = parseFloat($(table).offset().left);
+        info.containerPosY = parseFloat($("#" + divId).offset().top);
+        info.containerPosX = parseFloat($("#" + divId).offset().left);
+
+        if(opt != null)
+        {
+            info.posY = parseFloat( info.posY) - parseFloat(opt.marginTop);
+            info.posX = parseFloat(info.posX) - parseFloat(opt.marginLeft);
+            info.containerPosX = parseFloat(info.posX) - parseFloat(opt.marginLeft);
+            info.containerPosY = parseFloat(info.posY) - parseFloat(opt.marginTop);
+        }
+
+        info.width = parseFloat($(table).css("width"));
+        info.heigh = parseFloat($(table).css("height"));
         info.totalColumn = $(table).find("th").length;
         info.totalRows = $(table).find("tr").length - 1;
     
         info.headers = [];
         info.rows = [];
+
+        let prevheadcell = null;
+        let deltax = info.posX;
+        let deltay = info.posY;
+        let headerHeight = 0;
+        let afterHeaderRowPosY = 0;
         $(table).find("th").each(function(){
             let headcell = {};
-            headcell.width = $(this).css("width");
-            headcell.height = $(this).css("height");
+            headcell.width =  parseFloat( $(this).css("width"));
+            headcell.height = parseFloat( $(this).css("height"));
+
+            if(prevheadcell != null)
+            {
+                deltax = prevheadcell.x + prevheadcell.width;
+                deltay = prevheadcell.y;
+            }
+            headcell.x = deltax;
+            headcell.y = deltay;
+
+            afterHeaderRowPosY = parseFloat(headcell.y) +  parseFloat(headcell.height);
+
             info.headers.push(headcell);
+            prevheadcell = headcell;
         });
     
+
         let rowIdx = -1;
+        let prevRow = null;
+        let rowPosY = 0;
         $(table).find("tr").each(function(){
+
+            if(prevRow == null)
+                rowPosY = afterHeaderRowPosY;
+            else
+            {
+                rowPosY = parseFloat( prevRow[0].y) + parseFloat( prevRow[0].height);
+            }
+
     
             if(rowIdx >= 0)
             {
                 let row = [];
+                let prevCell = null;
+                let colPosX = 0;
                 $(this).find("td").each(function(){
                     let cell = {};
-                    cell.width = $(this).css("width");
-                    cell.height = $(this).css("height");
+                    cell.width = parseFloat($(this).css("width"));
+                    cell.height = parseFloat($(this).css("height"));
+                    cell.y = rowPosY;
+
+                    if(prevCell == null)
+                    {
+                        colPosX = info.posX;
+                    }
+                    else
+                    {
+                        colPosX =  parseFloat(prevCell.x) +  parseFloat(prevCell.width);
+                    }
+                    cell.x = colPosX;
+                    
                     row.push(cell);
+                    prevCell = cell;
                 });
     
                 info.rows.push(row);
+                prevRow = row;
             }
     
             rowIdx++;

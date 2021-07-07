@@ -1,72 +1,50 @@
+const sharp = require('sharp');
+const fs = require('fs');
+const http = require('http');
+const vision = require('@google-cloud/vision');
+
+
 class ParserLogic {
 
     static async parse(payload)
     {
         //console.log(payload);
         let newBoxes = [];
-
-       
-
         payload.forEach((item)=>{
-            if(item.y > 400 && item.x > 80)
+            if(item.y > 390 && item.x > 80)
             {
                 newBoxes.push(item);
             }
         })
 
+        let newBoxesY = ParserLogic.processY(newBoxes);
+
         newBoxes = ParserLogic.clear(newBoxes);
-        newBoxes = ParserLogic.sort(newBoxes);
-        newBoxes = ParserLogic.process(newBoxes);
-
-
-
-        //newBoxes = ParserLogic.merge(newBoxes);
-        /*
-        let lowestX = 800;
-        let minX = 0;
-        let lowestXItem = null;
-        let lowestXItems = [];
-        let previousLowestXItem = null;
-
-        for(var i = 0; i < 10; i ++)
-        {
-            lowestXItem = null;
-            lowestX = 800;
-            newBoxes.forEach((item)=>{
-                if(item.x < lowestX && item.x >= minX)
-                {
-                    lowestX = item.x;
-                    lowestXItem = item;
-                }
-            });
-
-            if(lowestXItem != null)
-            {
-                minX = lowestXItem.x + lowestXItem.w + 30;
-
-                //if(previousLowestXItem == null)
-                //    lowestXItems.push(lowestXItem);
-                //else if(previousLowestXItem != null && lowestXItem.x - (previousLowestXItem.x + previousLowestXItem.w) > 20 )
-                lowestXItems.push(lowestXItem);
-                
-                previousLowestXItem = lowestXItem;
-            }
-
-        }
-        */
-
-        return newBoxes;
+        newBoxes = ParserLogic.sortX(newBoxes);
+        let newBoxesX = ParserLogic.processX(newBoxes);
+        
+        return { xBoxes: newBoxesX, yBoxes: newBoxesY } ;
     }
 
-    static sort(boxes)
+    static sortX(boxes)
     {
-        let smallestX = 0;
         boxes.sort(function(a,b){
             return a.x - b.x;
         })
 
         return boxes;
     }
+
+    static sortY(boxes)
+    {
+        boxes.sort(function(a,b){
+            return a.y - b.y;
+        })
+
+        return boxes;
+    }
+
+
 
     static clear(boxes)
     {
@@ -104,7 +82,27 @@ class ParserLogic {
         return false;
       };
 
-    static process(boxes)
+      static processY(boxes)
+      {
+  
+          console.log("processY")
+          let newBoxes = [];
+          boxes = this.sortX(boxes);
+          let smallestX = boxes[0].x;
+          let xw = smallestX + boxes[0].w;
+          boxes = this.sortY(boxes);
+  
+          boxes.forEach((box)=>{
+              if(box.x >= smallestX && box.x <= xw)
+              {
+                  newBoxes.push(box);
+              }
+          })
+  
+          return newBoxes;
+      }
+
+    static processX(boxes)
     {
         let avgx = 10;
         let prevBox = null;
@@ -192,6 +190,193 @@ class ParserLogic {
         }
 
         return boxes;
+    }
+
+    static rows2boxes(rows)
+    {
+        let boexes = [];
+        let rowIdx = 0;
+        let colIdx = 0;
+        rows.forEach((row)=>{
+            colIdx = 0;
+            row.forEach((cell)=>{
+                boexes.push({ x: cell.x, y: cell.y, w: cell.width, h: cell.height, col: colIdx, row: rowIdx })
+                colIdx++;
+            })
+            rowIdx++;
+        })
+    
+        return boexes;
+    }
+
+    static getTotalRowsAndCols(boxes)
+    {
+        let minCol = -1;
+        let minRow = -1;
+        boxes.forEach((box)=>{
+            if(box.col > minCol)
+                minCol = box.col;
+            if(box.row > minRow)
+                minRow = box.row;
+        })  
+
+        return { totalCols: minCol + 1, totalRows: minRow + 1};
+    }
+
+    static boxes2rows(boxes)
+    {
+        let inf = this.getTotalRowsAndCols(boxes);
+        let rows = [];
+        for(var i = 0; i < inf.totalRows; i++)
+        {
+            let row = [];
+            for(var j = 0; j < inf.totalCols; j++)
+            {
+                let box = this.searchBox(boxes, i, j)
+                if(box != null)
+                {
+                    row.push(box);
+                }
+            }
+            rows.push(row);
+        }
+        return rows;
+    }
+
+    static searchBox(boxes, row, col)
+    {
+        for(var i = 0; i < boxes.length; i++)
+        {
+            if(boxes[i].row == row && boxes[i].col == col)
+                return boxes[i];
+        }
+
+        return null;
+    }
+
+    static download (url, dest, cb) {
+        var file = fs.createWriteStream(dest);
+        var request = http.get(url, function(response) {
+          response.pipe(file);
+          file.on('finish', function() {
+            file.close(cb);  // close() is async, call cb after close completes.
+          });
+        }).on('error', function(err) { // Handle errors
+          fs.unlink(dest); // Delete the file async. (But we don't check the result)
+          if (cb) cb(err.message);
+        });
+    }
+
+    static makeid(length) {
+        var result           = '';
+        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) {
+          result += characters.charAt(Math.floor(Math.random() * 
+                charactersLength));
+       }
+       return result;
+    }
+
+    static async visionApiOcr(boxes)
+    {
+        let newBoxes = [];
+        let promise = new Promise((resolve, reject)=>{
+            boxes.forEach( async (box)=>{
+                // Creates a client
+                const client = new vision.ImageAnnotatorClient();
+
+                /**
+                 * TODO(developer): Uncomment the following line before running the sample.
+                 */
+                const fileName = box.file;
+                console.log("Local file : " + fileName)
+
+                // Performs text detection on the local file
+                const [result] = await  client.textDetection(fileName);
+                const detections = result.textAnnotations;
+                console.log('Text for ' + fileName);
+                let ss = "";
+                let counter = 0;
+                detections.forEach((text) => 
+                {
+                    if(counter == 0)
+                    {
+                        //console.log(text)
+                        ss += text.description.replace(/\n/gi, " ") + "";
+                        ss = ss.replace(/\r/gi, "");
+                    }
+                    counter++;
+                    
+                });
+
+                fs.unlink(fileName, function(){
+                    console.log("Delete " + fileName);
+                })
+
+                ss = ss.trim();
+                console.log(ss);
+                box.text = ss;
+                box.file = null;
+                delete box.file;
+                newBoxes.push(box);
+
+                if(newBoxes.length == boxes.length)
+                {
+                    resolve(newBoxes);
+                }
+            })
+
+            return true;
+        })
+
+        return promise;
+    }
+
+    static async parseByBoxes(url, boxes)
+    {
+        console.log("BOXES")
+        console.log(boxes);
+
+        let promise = new Promise((resolve, reject)=>{
+
+            let rand = ParserLogic.makeid(9);
+            let tmpFile = "/tmp/tobecropped-" + rand + ".png";
+            
+            let files = [];
+            this.download(url, tmpFile, function(){ 
+                    boxes.forEach((box)=>{
+                        let rand2 = ParserLogic.makeid(9);
+                        let tmpFileResult = "/tmp/tobecropped-" + rand + "-cropped-" + rand2 + ".png";
+                        box.file = tmpFileResult;
+                        sharp(tmpFile).extract({ width: parseInt(box.w), height: parseInt(box.h), left: parseInt(box.x), top: parseInt(box.y) })
+                        .toFile(tmpFileResult)
+                        .then(function(new_file_info) {
+                            files.push(box);
+                            console.log("Image cropped and saved === " + files.length + "===" + boxes.length);
+                            if(files.length == boxes.length)
+                            {
+                                ParserLogic.visionApiOcr(files).then((newBoxes)=>{
+                                    fs.unlink(tmpFile, function(){
+                                        console.log("Delete " + tmpFile);
+                                    })
+                                    resolve(newBoxes)
+                                })
+                            }
+                            
+                        })
+                        .catch(function(err) {
+                            console.log("An error occured");
+                            console.log(err);
+                            reject(err);
+                        });
+                    })
+
+                    
+            })
+        })
+
+        return promise;
     }
 
 

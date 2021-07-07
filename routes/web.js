@@ -23,16 +23,31 @@ function getConfig()
     var config = {};
     config.PROJECT = process.env.PROJECT;
     config.GCS_BUCKET = process.env.GCS_BUCKET;
-    config.GCS_FOLDER = process.env.GCS_FOLDER;
+    config.GCS_PDF_FOLDER = process.env.GCS_PDF_FOLDER;
+    config.GCS_IMAGE_FOLDER = process.env.GCS_IMAGE_FOLDER;
+    config.GCS_JSON_FOLDER = process.env.GCS_JSON_FOLDER;
+    config.GCS_CSV_FOLDER = process.env.GCS_CSV_FOLDER;
     config.UPLOAD_BASE_URL = process.env.UPLOAD_BASE_URL;
+    config.OCR_URL = process.env.OCR_URL;
     return config;
 }
 
 router.get('/download/:url', function(req,res){
     var url = req.params.url;
-    download(url, "/tmp/temp.pdf", ()=>{
-        var data =fs.readFileSync('/tmp/temp.pdf');
-        res.contentType("application/pdf");
+    console.log(url)
+    url = decodeURIComponent(url);
+    console.log(url)
+    let temp = url.split("/")
+    temp = temp[temp.length - 1];
+
+    let ext = path.extname(temp);
+    console.log(ext);
+
+    download(url, "/tmp/temp" + ext, ()=>{
+        var data =fs.readFileSync('/tmp/temp' + ext);
+        let sdata = new Buffer(data).toString('ascii');
+        console.log(sdata);
+        res.contentType("application/" + ext);
         res.send(data);
     });
 
@@ -68,18 +83,23 @@ router.get("", function(req, res){
 
 router.get("/page2", function(req, res){
     var uri = req.query.uri;
+    var headers = req.query.headers;
+    var type = req.query.type;
 
     var dir = __dirname;
     var p = path.resolve( dir, "../public/pages/", "page2");
-    res.render(p, { uri: uri, config: getConfig() } )
+    res.render(p, { uri: uri, type: type, headers: headers, config: getConfig() } )
 });
 
 router.get("/page3", function(req, res){
     var uri = req.query.uri;
+    var headers = req.query.headers;
+    var type = req.query.type;
+    var totalPage = req.query.totalpage;
 
     var dir = __dirname;
     var p = path.resolve( dir, "../public/pages/", "page3");
-    res.render(p, { uri: uri, config: getConfig() } )
+    res.render(p, { uri: uri, type: type, headers: headers, totalPage: totalPage,  config: getConfig() } )
 });
 
 
