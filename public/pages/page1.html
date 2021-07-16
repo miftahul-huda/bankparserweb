@@ -20,7 +20,13 @@
     <div class="card-body">
         <div class="position-relative form-group">
             <select id="doc-template" class="btn-block select2">
-                <option value="bca|Tanggal,Keterangan1,Keterangan2,CBG,Mutasi,Saldo" >BCA</option>
+                <option value="bca|Tanggal,Keterangan,CBG,Mutasi,Saldo" >BCA</option>
+                <option value="danamon|Tgl Trans,Tgl VLT,Branch,Reff,Keterangan,Debits,Credits,Balance" >Danamon</option>
+                <option value="mandiri|Datetime,Value Date,Description,Ref,Debit,Credit,Balance" >Mandiri</option>
+            </select>
+        </div>
+        <div class="position-relative form-group">
+            <select id="doc-year" class="btn-block select2">
             </select>
         </div>
         <div class="position-relative form-group">
@@ -103,6 +109,21 @@ Dropzone.options.myDropzone = {
     }
 };
 
+
+function initYear()
+{
+    $("#doc-year").html("");
+    let dt = new Date();
+    let y = dt.getFullYear();
+    for(var i = y - 10; i <= y; i++ )
+    {
+        let opt = document.createElement("option");
+        opt.value = i;
+        $(opt).html(i);
+        $("#doc-year").append(opt);
+    }
+}
+
 function getUrl()
 {
     var project = "<%=config.PROJECT %>";
@@ -118,6 +139,7 @@ function getUrl()
 $(document).ready(function()
 {
 
+    initYear();
     $("#btn-clear").click(function(){
         Dropzone.forElement('#myDropzone').removeAllFiles(true)
     });
@@ -127,7 +149,7 @@ $(document).ready(function()
 
         var uri =  RESPONSE.payload;
         console.log(uri)
-        uri = uri.replace("gs://", "http://storage.googleapis.com/");
+        uri = uri.replace("gs://", "https://storage.googleapis.com/");
         uri = encodeURIComponent(uri);
 
         let vv = $("#doc-template").val();
@@ -136,7 +158,7 @@ $(document).ready(function()
         let template = vv[0];
         //alert(cols)
 
-        location = "/web/page2?type=" + template + "&headers=" + cols + "&uri=" + encodeURIComponent( uri);
+        location = "/web/page2?type=" + template + "&year=" + $("#doc-year").val() + "&headers=" + cols + "&uri=" + encodeURIComponent( uri);
     })
 })
 </script>

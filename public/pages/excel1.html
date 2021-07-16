@@ -54,10 +54,15 @@ var message = "";
 var error = false;
 var popUpError = false;
 var RESPONSE = {};
+var totalFiles = 0;
+
 Dropzone.options.myDropzone = {
     init: function() {
         this.on("processing", function(file) {
-            
+            console.log("Processing");
+            console.log(file.name);
+
+
             this.options.url = getUrl();
             message = "";
             error = false;
@@ -66,6 +71,7 @@ Dropzone.options.myDropzone = {
         });
 
         this.on("complete", function(file) {
+
             if (this.getUploadingFiles().length === 0 && this.getQueuedFiles().length === 0) {
                 if(error == false)
                 {
@@ -84,6 +90,7 @@ Dropzone.options.myDropzone = {
         });
 
         this.on("success", function(file, response) {
+            console.log("SUCCESS UPLOAD");
             console.log(response);
             console.log(file)
 
@@ -103,6 +110,10 @@ Dropzone.options.myDropzone = {
             else {
                 error = false;
                 RESPONSE=response;
+                
+                let ext = file.name.split(".").pop();
+                if(ext == "xls" || ext == "xlsx" || ext == "csv")
+                    totalFiles++;
             }
         })
     }
@@ -125,8 +136,16 @@ function getUrl()
 {
     var dt = new Date();
     var project = "dvt-apac-playground-3";
-    var bucket = "input_excel";
-    var folder = $("#cmbBank").val() + "-" + dt.getFullYear() + "" + dt.getMonth() + "" + dt.getDate() + "-" + makeid(5);
+    var bucket = "bank-parser-pdf";
+    var folder = "";
+    if(FOLDER == null)
+    {
+        folder = "tmp_upload/" + $("#cmbBank").val() + "-" + dt.getFullYear() + "" + dt.getMonth() + "" + dt.getDate() + "-" + makeid(5);
+        folder = encodeURIComponent(folder);
+    }
+    else
+        folder = FOLDER;
+
     FOLDER = folder;
 
     var url = "https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs/" + project + "/" + bucket + "/" + folder;
@@ -145,7 +164,7 @@ $(document).ready(function()
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         let btnId = urlParams.get("btnid");
-        location = "/web/excel2?btnid=" + btnId + "&folder=" + FOLDER;
+        location = "/web/excel2?btnid=" + btnId + "&folder=" + FOLDER + "&totalFiles=" + totalFiles;
     })
 })
 </script>

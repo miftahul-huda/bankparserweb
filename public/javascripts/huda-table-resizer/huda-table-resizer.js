@@ -435,6 +435,8 @@ var TableResizer = {
     
         $("#" + divId).css("left", info.containerPosX);
         $("#" + divId).css("top", info.containerPosY);
+        //$("#" + divId).offset( {left: info.containerPosX});
+        //$("#" + divId).offset( {top: info.containerPosY});
     
         
     
@@ -479,6 +481,9 @@ var TableResizer = {
         info.posX = parseFloat($(table).offset().left);
         info.containerPosY = parseFloat($("#" + divId).offset().top);
         info.containerPosX = parseFloat($("#" + divId).offset().left);
+        info.containerPosXPercentage = info.containerPosX / $(document).width() * 100;
+        info.containerPosYPercentage = info.containerPosY / $(document).height() * 100;
+        //alert(info.containerPosXPercentage);
 
         if(opt != null)
         {

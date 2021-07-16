@@ -13,11 +13,13 @@
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "cookie-parser": "~1.4.4",
+    "csv-parse": "^4.16.0",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "express": "~4.16.1",
     "express-session": "^1.17.1",
+    "form-data": "^4.0.0",
     "formidable": "^1.2.2",
     "http-errors": "~1.6.3",
     "image-clipper": "^0.4.4",
@@ -28,6 +30,7 @@
     "pg-hstore": "^2.3.3",
     "sequelize": "^6.3.5",
     "sharp": "^0.28.3",
-    "sqlite3": "^5.0.0"
+    "sqlite3": "^5.0.0",
+    "zip-lib": "^0.7.2"
   }
 }

@@ -19,22 +19,26 @@
     <%- include ("./header.html") -%>
     <div class="card-body">
 
-        <div id="processgif"></div>
+        <div id="processgif" style="position: absolute; top: 40%; left: 40%; z-index: 1000;"></div>
         <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
             
             <div style="width: 10%;display: table-cell;"></div>
             <div style="width: 10%;display: table-cell;" id="page-info"></div>
-            <div style="width: 50%;display: table-cell;"></div>
+            <div style="width: 10%;display: table-cell;"></div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
-            <div style="width: 2px;"></div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
             </div>
-            <div style="width: 2px;"></div>
+            <div style="width: 15%;display: table-cell;">
+                <button id="btn-rerun" type="button" class="btn btn-block btn-secondary">Rerun OCR</button>
+            </div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-save-csv" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
+            </div
+            <div style="width: 10%;display: table-cell;">
+                <button id="btn-next" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Go to analytic&nbsp;&nbsp;&nbsp;</button>
             </div>
         </div>
         <div style="height: 50px;"></div>
@@ -70,15 +74,8 @@
         </table>
         
     </div>
-    <div style="width: 95%; display: table; margin-left: 0%;">
-        <div style="width: 60%;display: table-cell;"></div>
-        <div style="width: 15%;display: table-cell;">
-            <button id="btn-back" type="button" class="btn btn-block btn-primary">Back</button>
-        </div>
-        <div style="width: 1%;display: table-cell;"></div>
-        <div style="width: 15%;display: table-cell;">
-            <button id="btn-next" type="button" class="btn btn-block btn-primary">Next</button>
-        </div>
+ 
+
     </div>
     <%- include ("./footer.html") -%>
 </body>
@@ -97,13 +94,13 @@ var HEADERS = "<%=headers %>";
 var TYPE = "<%=type %>";
 var TOTAL_PAGE = "<%=totalPage %>";
 var PREV_PAGE = 0;
+var YEAR = <%=year %>;
 
 $(document).ready(function()
 {
 
     $("#processgif").show();
     $("#tbl-result").hide();
-    $("#btn-next").hide();
     $("#btn-back").hide();
 
     $("#btn-back").click(function(){
@@ -111,52 +108,74 @@ $(document).ready(function()
     });
 
     $("#btn-prev-image").on("click", function(){
-
-        CUR_PAGE--;
-        console.log("CUR_PAGE");
-        console.log(CUR_PAGE);
-        if(CUR_PAGE < 1)
-        {
-            LAST_COUNTER = 0;
-            LAST_DATA_LENGTH = 0;
-            CUR_PAGE = 1;
-        }   
-
-
-        $("#page-info").html("Page : "  + (CUR_PAGE))
-        
+        prev();
         run(CUR_PAGE);
 
     })
 
     $("#btn-next-image").on("click", function(){
 
-        CUR_PAGE++;
-        console.log("CUR_PAGE");
-        console.log(CUR_PAGE);
-        if(CUR_PAGE > TOTAL_PAGE)
-            CUR_PAGE = TOTAL_PAGE;
-        
-        $("#page-info").html("Page : " + (CUR_PAGE))
-        run(CUR_PAGE);
+        saveCsv(CUR_PAGE, function(response){
+            next();
+            run(CUR_PAGE);
+        });
 
     })
 
+    $("#btn-rerun").on("click", function(){
+        //prev();
+        //next();
+        clearAndRun(CUR_PAGE);
+    });
+
     $("#btn-save-csv").click(function(){
-        let csv = toCsv(DATATABLE);
-
-        console.log(csv)
-
-        saveCsv(CUR_PAGE, csv, function(response){
+        saveCsv(CUR_PAGE, function(response){
             console.log(response)
             alert("Saved")
         });
     });
 
-    $("#page-info").html("Page : " + (CUR_PAGE))  
+    $("#btn-next").click(function()
+    {
+        location = "/web/analytic";
+    });
+    $("#page-info").html("Page : " + (CUR_PAGE) + " of " + TOTAL_PAGE)  
     run(CUR_PAGE);
 })
 
+
+function next()
+{
+    PREV_PAGE = CUR_PAGE;
+    CUR_PAGE++;
+
+    if(CUR_PAGE > TOTAL_PAGE)
+        CUR_PAGE = TOTAL_PAGE;
+
+    console.log("CUR_PAGE");
+    console.log(CUR_PAGE);
+    
+    $("#page-info").html("Page : " + (CUR_PAGE) + " of " + TOTAL_PAGE)
+}
+
+function prev()
+{
+    PREV_PAGE = CUR_PAGE;
+    CUR_PAGE--;
+
+    if(CUR_PAGE < 1)
+    {
+        LAST_COUNTER = 0;
+        LAST_DATA_LENGTH = 0;
+        CUR_PAGE = 1;
+    }   
+
+    console.log("CUR_PAGE");
+    console.log(CUR_PAGE);
+
+
+    $("#page-info").html("Page : " + (CUR_PAGE) + " of " + TOTAL_PAGE)
+}
 
 function getImageFilename(page)
 {
@@ -205,10 +224,11 @@ function getBaseFileUri()
 {
     let uri = decodeURIComponent(FILE_URI);
     uri = uri.replace("http://", "");
+    uri = uri.replace("https://", "");
 
     uri = uri.split("/");
     let host = uri[0];
-    uri = "http://" + host;
+    uri = "https://" + host;
     return uri;
 }
 
@@ -221,24 +241,43 @@ function imageBox2Text(page, callback)
     let imagefileUrl = getImageUrl(page);
     imagefileUrl =  encodeURIComponent(imagefileUrl);
 
-    console.log("Download Json")
+    console.log("imageBox2Text Download Json")
     console.log(jsonFileUrl);
 
     downloadJson(jsonFileUrl, function(json){
         console.log("JSON " + jsonFileUrl);
         console.log(json);
 
-        json = { positions: json.rows }
-        json = JSON.stringify(json)
-        console.log("Json to send to parse")
-        console.log(json);
+        if(typeof json == 'object')
+            json = JSON.stringify(json);
 
-        let url = "/table/parse-by-boxes/" + imagefileUrl;
-        $.post(url, json, function(response){
-            
-            if(callback != null)
-                callback(response);
-        })
+        if(json.indexOf("<?xml") == -1)
+        {
+            json = JSON.parse(json);
+            json = { positions: json.rows }
+            json = JSON.stringify(json)
+            console.log("Json to send to parse")
+            console.log(json);
+
+            let url = "/table/parse-by-boxes/" + imagefileUrl;
+            $.post(url, json, function(response){
+                
+                if(callback != null)
+                    callback(response);
+            }).fail(function(){
+                run(CUR_PAGE);
+                //alert("Parsing failed. Please fix the table for this page.")
+            })
+
+        }
+        else
+        {
+            //CUR_PAGE = PREV_PAGE;
+            alert("The pdf page " + CUR_PAGE + " does not have table defined")
+            $("#processgif").hide();
+        }
+
+
     })
 }
 
@@ -251,8 +290,12 @@ function downloadJson(jsonFilename, callback)
 }
 
 
-function saveCsv(page, data, callback)
+function saveCsv(page, callback)
 {
+    let data = toCsv(DATATABLE);
+
+    console.log(data)
+
     let filepath = getCsvFilename(page)
     filepath = GCS_CSV_FOLDER + "/" + filepath;
     filepath = encodeURIComponent(filepath);
@@ -296,8 +339,52 @@ function csv2Datatable(csvStr)
     return data;
 }
 
-function run(page)
+function clearAndRun(page)
 {
+    $("#processgif").show();
+    let tbl = $("#tbl-result");
+    $(tbl).html("");
+    ocr(page)
+}
+
+function ocr(page)
+{
+    console.log("CSV doesn't exist. Parsing ....")
+    imageBox2Text(page, function(response)
+    {
+        console.log("RESPONSE FROM PARSE");
+        console.log(response);
+
+        let hh = HEADERS.split(",")
+        console.log(HEADERS)
+        console.log(response.payload[0].length)
+
+        if(hh.length != response.payload[0].length)
+        {
+            alert("The total header's columns is not the same with rows's column, please fix the table guideline")
+        }
+        else
+        {
+            let data =  assembleData(HEADERS, response.payload);
+
+            console.log("assembleData");
+            console.log(data);
+
+            DATATABLE = toTable(data, YEAR);
+            displayResult(DATATABLE)
+
+        }
+        
+        $("#processgif").hide();
+
+    })
+}
+
+function run(page, dontDownload)
+{
+    let tbl = $("#tbl-result");
+    $(tbl).html("");
+
     $("#processgif").show();
 
     let filepath = getCsvFilename(page)
@@ -307,6 +394,7 @@ function run(page)
     filepath = encodeURIComponent(filepath);
 
     console.log("Download " + filepath)
+    
     downloadJson(filepath, function(result)
     {
         console.log(result)
@@ -321,23 +409,7 @@ function run(page)
         }
         else
         {
-            console.log("CSV doesn't exist. Parsing ....")
-            imageBox2Text(page, function(response)
-            {
-                console.log("RESPONSE FROM PARSE");
-                console.log(response);
-
-                let data =  assembleData(HEADERS, response.payload);
-
-                console.log("assembleData");
-                console.log(data);
-
-                DATATABLE = toTable(data);
-                displayResult(DATATABLE)
-                
-                $("#processgif").hide();
-
-            })
+            ocr(page);
         }
 
     })
@@ -355,15 +427,22 @@ function run(page)
 
 var LAST_COUNTER = 0;
 var LAST_DATA_LENGTH = 0;
+var ALLDATA =  [];
+
+function getLastCounter()
+{
+    let lastCounter = 0;
+    for(var i = 0; i < CUR_PAGE - 1; i++)
+    {
+        let l = ALLDATA[i].length - 1;
+        lastCounter+= l;
+    }
+
+    return lastCounter;
+}
 function assembleData(headers, data)
 {
-    
-    if(PREV_PAGE > CUR_PAGE)
-    {
-        LAST_COUNTER = LAST_COUNTER - LAST_DATA_LENGTH - data.length;
-        
-    }
-        
+
     let heads = headers.split(",");
     let headss = [];
 
@@ -375,10 +454,12 @@ function assembleData(headers, data)
     data.splice(0, 0, headss);
 
     let counter = 0;
+    let lastCounter = getLastCounter();
+    console.log(lastCounter)
     for(var i = 0; i < data.length; i++)
     {
         let row = data[i];
-        let counter2 = LAST_COUNTER + counter;
+        let counter2 = lastCounter + counter;
         if(counter  == 0)
             row.splice(0,0, { text: "" });
         else
@@ -386,44 +467,37 @@ function assembleData(headers, data)
         counter++;
     }
 
-    //if(PREV_PAGE < CUR_PAGE)
-    LAST_COUNTER = LAST_COUNTER + data.length - 1;
-    
-    
-    LAST_DATA_LENGTH = data.length - 1;
-    PREV_PAGE = CUR_PAGE;
+    if((CUR_PAGE - 1) in ALLDATA)
+    {
+        ALLDATA[CUR_PAGE - 1] = data; 
+    }
+    else
+    {
+        ALLDATA.push(data);
+    }
 
-    
-
+    console.log("ALLDATA")
+    console.log(ALLDATA)
+   
     return data;
 }
 
 function assembleData2( data)
-{
-    if(CUR_PAGE != PREV_PAGE && CUR_PAGE != 0)
+{   
+    if((CUR_PAGE - 1) in ALLDATA)
     {
-        if(PREV_PAGE > CUR_PAGE)
-        {
-            LAST_COUNTER = LAST_COUNTER - LAST_DATA_LENGTH - (data.length - 1);
-            
-        }
-
-        console.log(LAST_COUNTER)   
-
-
-        //if(PREV_PAGE < CUR_PAGE)
-        LAST_COUNTER = LAST_COUNTER + data.length - 1;
-        
-        LAST_DATA_LENGTH = data.length - 1;
-        PREV_PAGE = CUR_PAGE;
-
-        console.log(LAST_COUNTER);
+        ALLDATA[CUR_PAGE - 1] = data; 
     }
-
+    else
+    {
+        ALLDATA.push(data);
+    }
+    console.log("ALLDATA")
+    console.log(ALLDATA)
     return data;
 }
 
-function toTable(data)
+function toTable(data, year)
 {
     let rows = [];
     let totalRows = data.length;
@@ -436,6 +510,18 @@ function toTable(data)
         {
             row.push(data[i][j].text);
         }
+
+        if(TYPE.toLocaleLowerCase().indexOf("bca") > -1)
+        {
+            let dt = row[1];
+            if(dt != null && dt.trim().length > 0 && dt.indexOf("/") > -1)
+            {
+                dt = dt.split("/");
+                dt = year + "-" + dt[1] + "-" + dt[0];
+                row[1] = dt;
+            }
+        }
+
         rows.push(row);
     }
     return rows;

@@ -73,6 +73,8 @@ a {
   background-size: auto 100%;
 }
 
-
-
+.select2-container--default .select2-results__option--highlighted[aria-selected], .select2-container--default .select2-results__option--highlighted[aria-selected]:hover {
+  background-color: #F2F2F2;
+  color: #000;
+}
 

@@ -35,6 +35,14 @@
 <script>
 
 var FOLDER = null;
+var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+var PROJECT = "<%=config.PROJECT %>";
+var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
+var GCS_PDF_FOLDER = "<%=config.GCS_PDF_FOLDER %>";
+var GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
+var GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
+var totalFiles = <%=totalFiles %>;
+
 $(document).ready(function()
 {
 
@@ -43,12 +51,36 @@ $(document).ready(function()
     FOLDER = urlParams.get("folder");
 
     showAll(false);
-    getAndDisplayGcsFiles();
+    zipFiles(FOLDER, function(path){
+        console.log("Zip files done")
+        getAndDisplayGcsFiles();
+    })
+
     $("#btn-download").click(function(){
         download();
         
     })
 })
+
+function zipFiles(folder, callback)
+{
+    let outputFolder = folder.split("/");
+    outputFolder = outputFolder[outputFolder.length - 1];
+
+    let zipOutputFolder = "zip_file/" + outputFolder + ".zip";
+    zipOutputFolder = encodeURIComponent(zipOutputFolder);
+
+    //UPLOAD_BASE_URL = "http://localhost:8082"
+
+    folder = encodeURIComponent(folder);
+    let url = UPLOAD_BASE_URL + "/upload/gcs/zip-folder/" + PROJECT + "/bank-parser-pdf/" + folder + "/input_excel/" + zipOutputFolder;
+    console.log(url);
+    $.get(url, function(response){
+        console.log(response);
+        if(callback != null)
+            callback(response.payload)
+    })
+}
 
 function showAll(value)
 {
@@ -83,8 +115,8 @@ function getAndDisplayGcsFiles()
     getGcsFiles((files) =>{
 
         let total = getTotalFiles(files);
-
-        if(total >= 3)
+        let totFiles = totalFiles * 3;
+        if(total >= totFiles)
         {
             displayFiles(files);
             showAll(true);
@@ -127,7 +159,10 @@ function download()
 
 function getGcsFiles(callback)
 {
-    var url = "https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs-list-public/dvt-apac-playground-3/output_excel/" + FOLDER;
+    let folder = FOLDER.split("/");
+    folder = folder[folder.length - 1];
+    
+    var url = "https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs-list-public/dvt-apac-playground-3/output_excel/" + folder;
     
     console.log("getGcsFiles")
     console.log(url);

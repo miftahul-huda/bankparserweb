@@ -20,46 +20,46 @@
             
             
         </div>
-        <div id="processgif"></div>
+        <div id="processgif" style="position: absolute; top: 40%; left: 40%; z-index: 1000;"></div>
 
         <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
-            <div style="width: 10%;display: table-cell;"></div>
+            <div style="width: 5%;display: table-cell;"></div>
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-autodetect" type="button" class="btn btn-block btn-secondary">Autodetect</button>
             </div>
-            <div style="width: 2px;"></div>
-            <div style="width: 10%;display: table-cell;">
+            <div style="width: 15%;display: table-cell;">
+                <button id="btn-create-table" type="button" class="btn btn-block btn-secondary">Manual Table</button>
+            </div>
+            
+            <div style="width: 15%;display: table-cell;">
                 <button id="btn-clear-table" type="button" class="btn btn-block btn-secondary">Clear table</button>
             </div>
-            <div style="width: 30%;display: table-cell;"></div>
-            <div style="width: 10%;display: table-cell;" id="page-info">Page</div>
-            <div style="width: 2px;"></div>
+           
+            <div style="width: 10%;display: table-cell;padding-left: 10px;" id="page-info">Page</div>
+
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
-            <div style="width: 2px;"></div>
+
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
             </div>
-            <div style="width: 2px;"></div>
+  
             <div style="width: 10%;display: table-cell;">
                 <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
             </div>
+            <div style="width: 15%;display: table-cell;">
+                <button id="btn-next" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Go to OCR&nbsp;&nbsp;&nbsp;</button>
+            </div>
         </div>
         <div id="pdf-main-container" style=" width: 100%;">
-            <canvas style="margin-left: 10%;" id="pdf-canvas" width="400"></canvas>
+            <canvas style="position: absolute; left: 100px; top: 400px;" id="pdf-canvas" width="400"></canvas>
         </div>
 
         <div id="divPdfTable"></div>
 
     </div>
         
-    </div>
-    <div style="width: 95%; display: table; margin-left: 0%; padding: 100px;">
-        <div style="width: 70%;display: table-cell;"></div>
-        <div style="width: 30%;display: table-cell;">
-            <button id="btn-next" type="button" class="btn btn-block btn-primary">Next</button>
-        </div>
     </div>
     <%- include ("./footer.html") -%>
 
@@ -81,6 +81,7 @@ var PAGE=  null;
 var PDFJS = null;
 var HEADERS = "<%=headers %>";
 var TYPE = "<%=type %>";
+var YEAR = <%=year %>;
 
 function showPDF2(url, callback)
 {
@@ -104,6 +105,8 @@ function showPDF2(url, callback)
         console.log('PDF loaded');
         PDF = pdf;
         openPage(PDF, 1, callback);
+
+        $("#page-info").html("Page : " + CUR_PAGE + " of " + PDF.numPages);
 
     }, function (reason) {
     // PDF loading error
@@ -171,7 +174,7 @@ $(document).ready(function()
         $("#processgif").show();
         saveTable("divPdfTable", function(){
             let totalPage = PDF.numPages;
-            let url = "/web/page3?type=" + TYPE + "&totalpage=" + totalPage + "&headers=" + HEADERS + "&uri=<%=uri%>";
+            let url = "/web/page3?type=" + TYPE + "&totalpage=" + totalPage + "&year=" + YEAR + "&headers=" + HEADERS + "&uri=<%=uri%>";
 
             $("#processgif").hide();
             location = url;
@@ -180,9 +183,13 @@ $(document).ready(function()
 
     $("#btn-save-table").off("click");
     $("#btn-save-table").on("click", function(){
-        saveTable("divPdfTable", function(){
-            alert("Saved");
+        $("#progressgif").show();
+        savePDFImage(function(response){
+            saveTable("divPdfTable", function(){
+                alert("Saved");
+            })
         })
+
         
     });
 
@@ -194,7 +201,7 @@ $(document).ready(function()
             console.log(CUR_PAGE);
             if(CUR_PAGE < 1)
                 CUR_PAGE = 1;
-            $("#page-info").html("Page : " + CUR_PAGE);
+            $("#page-info").html("Page : " + CUR_PAGE + " of " + PDF.numPages);
             openPage(PDF, CUR_PAGE);
             retrieveJson();
         });
@@ -210,7 +217,7 @@ $(document).ready(function()
             console.log(CUR_PAGE);
             if(CUR_PAGE > PDF.numPages)
                 CUR_PAGE = PDF.numPages;
-            $("#page-info").html("Page : " + CUR_PAGE);
+            $("#page-info").html("Page : " + CUR_PAGE + " of " + PDF.numPages);
             openPage(PDF, CUR_PAGE);        
             retrieveJson();
         });
@@ -222,11 +229,25 @@ $(document).ready(function()
         autoDetect();
     })
 
+    $("#btn-create-table").on("click", function(){
+        //TableResizer.createResizedTable("divPdfTable", 5, 5);
+
+        savePDFImage(function(response)
+        {
+            console.log(response);
+            let imageurl = response.payload;
+
+            TableResizer.createResizedTable("divPdfTable", 7, 10);
+            $("#divPdfTable").css("left", TABLELEFT)
+            $("#divPdfTable").css("top", TABLETOP)
+        });
+    })
+
     $("#btn-clear-table").on("click", function(){
         TableResizer.clearTable("divPdfTable");
     })
 
-    $("#page-info").html("Page : " + CUR_PAGE);
+    
 
 })
 
@@ -386,10 +407,12 @@ function getBaseFileUri()
 {
     let uri = decodeURIComponent(FILE_URI);
     uri = uri.replace("http://", "");
+    uri = uri.replace("https://", "");
+
 
     uri = uri.split("/");
     let host = uri[0];
-    uri = "http://" + host;
+    uri = "https://" + host;
     return uri;
 }
 
@@ -408,6 +431,18 @@ function retrieveJson( callback)
     $.get(uri, function(response){
         let isJson = false;
         console.log(response)
+
+        try
+        {
+            response = JSON.parse(response);
+            isJson = true;
+        }
+        catch(err)
+        {
+            isJson = false;
+            console.log("Json parse error ")
+            console.log(err);
+        }
 
         if( typeof response == 'object')
             isJson = true;
@@ -445,7 +480,7 @@ function getJsonFilename()
 {
     let filename = decodeURIComponent(FILE_URI).split("/");
     filename = filename[filename.length - 1];
-    filename = filename.replace("pdf", "json");
+    filename = filename.replace(".pdf", ".json");
     let tmpfilename = filename.replace(".json", "");
     tmpfilename += "-page-" + CUR_PAGE;
     tmpfilename += ".json";
@@ -458,7 +493,7 @@ function getOriJsonFilename()
 {
     let filename = decodeURIComponent(FILE_URI).split("/");
     filename = filename[filename.length - 1];
-    filename = filename.replace("pdf", "json");
+    filename = filename.replace(".pdf", ".json");
     let tmpfilename = filename.replace(".json", "");
     tmpfilename += "-page-ori-" + CUR_PAGE;
     tmpfilename += ".json";
@@ -491,8 +526,8 @@ function getTableInformationOriginal(divId)
 {
     let canvasX = $("#pdf-canvas").position().left;
     let canvasY = $("#pdf-canvas").position().top;
-    let containerWidth = $("#pdf-main-container").width();
-    canvasX = 11/100 * $(document).width();
+    //let containerWidth = $("#pdf-main-container").width();
+    //canvasX = 11/100 * $(document).width();
 
     let info2 = TableResizer.getTableInformation(divId, { marginLeft: canvasX, marginTop: canvasY});
     return info2;
@@ -507,6 +542,10 @@ function saveTable(divId, callback)
         $("#processgif").show();
         let info = TableResizer.getTableInformation(divId);
         let info2 = getTableInformationOriginal(divId);
+
+        console.log("========Info========")
+        console.log(JSON.stringify(info))
+        console.log("============End of Info===========")
 
         let boxes = rowsToBoxes(info2.rows);
 

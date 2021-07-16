@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<%- include ("./headerscript.html") -%>
+
+<link href="../javascripts/tabular/css/tabulator.min.css" rel="stylesheet">
+<script type="text/javascript" src="../javascripts/tabular/js/tabulator.min.js"></script>
+
+
+<style>
+    .dropzone{
+        border: solid 1px #ccc;
+        border-radius: 5px;
+    }
+</style>
+
+</head>
+<body>
+    <%- include ("./header.html") -%>
+    <div class="card-body">
+
+        <div style="width: 100%; display: table;">
+            <div style="width: 10%; display: table-cell"></div>
+            <div style="width: 80%; display: table-cell">
+                <div id="processgif" style="position: absolute; top: 40%; left: 40%; z-index: 1000;"></div>
+                <div style="height: 10px;"></div>
+                <div>
+                    <label>Name</label>
+                    <input type="text" class="form-control" id="names">
+                </div>
+                <div>Select files</div>
+                <div id="file-list">
+    
+                </div>
+                <div style="height: 20px;"></div>
+
+            </div>
+            <div style="width: 10%; display: table-cell"></div>
+
+        </div>
+        
+    </div>
+    <div style="height: 20px;"></div>
+
+    <div style="width: 95%; display: table; margin-left: 0%;">
+        <div style="width: 60%;display: table-cell;"></div>
+        <div style="width: 15%;display: table-cell;">
+            <button id="btn-back" type="button" class="btn btn-block btn-primary">Back</button>
+        </div>
+        <div style="width: 1%;display: table-cell;"></div>
+        <div style="width: 15%;display: table-cell;">
+            <button id="btn-next" type="button" class="btn btn-block btn-primary">Send to analytic</button>
+        </div>
+    </div>
+    <div style="height: 200px;"></div>
+    <%- include ("./footer.html") -%>
+    <div id="cover" style="position: absolute; width: 100%; height: 400%; top: 0; left: 0; background-color: #666; opacity: 0.8;">
+    </div>
+</body>
+
+    <div id="window-result" style="border-radius: 10px; padding: 20px; border: solid 1px #ccc;position: absolute; width: 80%; background-color: #fff; top: 10%; left: 10%">
+        <div style="display:flex;">
+            <div style="width: 95%;"></div>
+            <div style="width: 5%;text-align: center; padding: 3px;">
+                <image src="../images/cancel.png" style="width: 20px; height: 20px; cursor: pointer" onclick="closeWin()"></image>
+            </div>
+        </div>
+        <table id="tblFiles">
+        </table>
+        <div id="link" style="height: 100px; width: 80%; margin-left: 10%;">
+
+        </div>
+    </div>
+
+
+<script>
+var PROJECT = "<%=config.PROJECT %>";
+var GCS_BUCKET = "<%=config.GCS_BUCKET %>";
+var GCS_PDF_FOLDER = "<%=config.GCS_PDF_FOLDER %>";
+var GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
+var GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
+var GCS_CSV_FOLDER = "<%=config.GCS_CSV_FOLDER %>";
+var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+var PREV_PAGE = 0;
+
+$(document).ready(function()
+{   
+    closeWin();
+    //showWin();
+    //addDownloadButtons("trst")
+    $("#processgif").show();
+    getAndDispalyPdfFiles(function(){
+        $("#processgif").hide();
+    })
+
+    $("#btn-next").click(function()
+    {
+        let result = validate();
+        if(result.success == false)
+            alert(result.message);
+        else
+            sendToAnalytic();
+    })
+
+    /*|let link = "<button class='btn btn-block btn-secondary'>Download</button>";
+    $("#link").html(link);*/
+
+})
+
+function alphanumeric(name)
+{
+   var regEx = /^[0-9a-zA-Z]+$/;
+   if(name.match(regEx))
+     {
+      return true;
+     }
+   else
+     {
+     
+     return false;
+     }
+} 
+
+function validate()
+{
+    let names = $("#names").val();
+    if(names == null)
+        names = "";
+    let isalphanumeric = alphanumeric(names.replace(/\s/gi, ""));
+    let totFiles = getSelectedFiles().length;
+
+    if(names.length == 0)
+        return { success: false, message: "Please, enter the name input"};
+    else if(isalphanumeric == false)
+        return { success: false, message: "Please input letter and number only"}
+    else if(totFiles == 0)
+        return { success: false, message: "Please select files"}
+
+    return { success: true};
+}
+
+function showWin()
+{
+    //$("body").css("opacity", 0.4)
+    $("#cover").show("slow");
+    $("#window-result").show("slow");
+}
+
+function closeWin()
+{
+    //$("body").css("opacity", 1)
+    $("#cover").hide("slow");
+    $("#window-result").hide("slow");
+}
+
+function getAndDispalyPdfFiles(callback, callbackError)
+{
+    getPdfFiles(function(files){
+        displayPdfFiles(files);
+        if(callback != null)
+            callback();
+    },
+    function(err)
+    {
+        if(callbackError != null)
+            callbackError(err);
+    })
+}
+
+function getPdfFiles(callback, callbackError)
+{
+    let url = "/table/pdf-files";
+    let files = [];
+    $.get(url, function(response){
+        if(response.success)
+        {
+            let ff = response.payload;
+            ff.forEach((f)=>{
+                let ext = f.split(".")
+                ext = ext[ext.length - 1];
+                if(ext.toLowerCase() == "pdf")
+                    files.push(f);
+            })
+            if(callback != null)
+            {
+                callback(files)
+            }
+        }
+        else
+        {
+            if(callbackError != null)
+                callbackError(response.error)
+        }
+    })
+}
+
+function displayPdfFiles(files)
+{
+    $("#file-list").html("");
+
+    files.forEach((file)=>{
+        let div = createFileItemDisplay(file);
+        $("#file-list").append(div);
+    })
+}
+
+function createFileItemDisplay(file)
+{
+    //Container
+    var div = document.createElement("div")
+    div.id = "file-item-container";
+    $(div).css("display", "table")
+    $(div).css("width", "100%")
+
+    //Div Checkbox
+    let divChk = document.createElement("div")
+    divChk.id = "";
+    
+    $(divChk).css("display", "table-cell")
+    $(divChk).css("width", "2%")
+
+    //Checkbox
+    let chk = document.createElement("input")
+    $(chk).attr("type", "checkbox")
+    $(chk).attr("class", "chk-pdf-files");
+    $(chk).attr("value", file)
+    
+
+    //Add checkbox to div checkbox
+    $(divChk).append(chk);
+
+
+    //Div Filename text
+    let divFile = document.createElement("div")
+    divFile.id = "";
+    $(divFile).css("display", "table-cell")
+    $(divFile).css("width", "98%")
+    $(divFile).html(file);
+
+
+    //Add div checkbox and filename to div container
+    $(div).append(divChk);
+    $(div).append(divFile);
+
+    return div;
+}
+
+function getSelectedFiles()
+{
+    let data = [];
+    console.log($(document).find("input[class='chk-pdf-files']"));
+    $(document).find("input[class='chk-pdf-files']:checked").each( function() {
+        data.push($(this).prop("value").replace("pdf/", ""));
+    })
+
+    return data;
+}
+
+function sendToAnalytic()
+{
+    let files = getSelectedFiles();
+    console.log(files);
+    let names = $("#names").val();
+    let data = {};
+    data.files = files;
+    data.names = names;
+
+    $("#processgif").show();
+    console.log(data);
+    
+    $.post("/table/analytic", JSON.stringify(data), function(response)
+    {
+        console.log(response);
+        let payload = response.payload;
+
+        //let url = UPLOAD_BASE_URL + "/upload/gcs/download/" + payload.PROJECT + "/" + payload.BUCKET + "/" + encodeURIComponent(payload.PATH);
+        //let link = "<button class='btn btn-block btn-secondary' onclick=\"window.open('" + url + "')\" >Download " + payload.PATH + "</button>";
+        //$("#link").html(link);
+        //$("#processgif").hide();
+
+        waitForResult(payload.PATH);
+        
+    })
+}
+
+function download()
+{
+    let url = UPLOAD_BASE_URL + "/upload/gcs/download-folder/" + PROJECT + "/output_excel_category_automatic/" + PPATH;
+    window.open(url, null)
+}
+
+let resultFiles  = [];
+let interval = null;
+function waitForResult(path)
+{
+    let pp = path.split("/");
+    pp  = pp[pp.length - 1];
+    pp = pp.replace(".zip", "");
+    PPATH = pp;
+
+    interval = setInterval(function(){
+        console.log('getResult')
+        getResult(path, function(files){
+            console.log(files);
+            if(files.length >= getSelectedFiles().length * 3)
+            {
+                $("#tblFiles").html("");
+                displayFiles(files);
+                clearInterval(interval);
+
+                addDownloadButtons(path)
+                $("#processgif").hide();
+
+                showWin();
+            }
+        })
+    }, 5000)
+}
+
+function addDownloadButtons(path)
+{
+    let pp = path.split("/");
+    pp  = pp[pp.length - 1];
+    pp = pp.replace(".zip", "");
+    PPATH = pp;
+
+    let url = UPLOAD_BASE_URL + "/upload/gcs/download-folder/" + PROJECT + "/output_excel_category_automatic/" + PPATH + "/analytic-" + PPATH + ".zip" ;
+    let urlRaw  = UPLOAD_BASE_URL + "/upload/gcs/download/" + PROJECT + "/input_excel/" + encodeURIComponent(path);
+    let linkRaw = "<button class='btn btn-block btn-secondary' onclick=\"window.open('" + urlRaw + "')\" >Download OCR Result</button>";
+    let link = "<button class='btn btn-block btn-secondary' onclick=\"window.open('" + url + "')\" >Download Analytic Result</button>";
+    
+    let allLinks = "<div style='display: flex; margin-top: 10%'>" + linkRaw + "<div style='width: 5px'></div>" + link + "</div>";
+    $("#link").html(allLinks);
+}
+function displayFiles(files)
+{
+    files.forEach((file) => {
+
+        if(file.metadata.name.endsWith("/") == false)
+        {
+            var tr = document.createElement("tr");
+            
+            var td = document.createElement("td");
+            $(td).css("padding-right", '5px')
+            $(td).html("<img src='../images/file.png'>");
+            $(tr).append(td);
+
+            var td = document.createElement("td");
+            $(td).html(file.metadata.name);
+            $(tr).append(td);
+            
+            $("#tblFiles").append(tr);
+        }
+    })
+}
+var PPATH = null;
+function getResult(path, callback)
+{
+    let pp = path.split("/");
+    pp  = pp[pp.length - 1];
+    pp = pp.replace(".zip", "");
+    PPATH = pp;
+
+    let url = UPLOAD_BASE_URL + "/upload/gcs-list-public/" + PROJECT + "/output_excel_category_automatic/" + pp;
+    console.log(url)
+    $.get(url, function(response){
+        if(callback != null)
+            callback(response.payload)
+    })
+}
+
+
+function getImageFilename(page)
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-" + page;
+        filename += ".png";
+    return filename;
+}
+
+function getOriJsonFilename(page)
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-ori-" + page;
+        filename += ".json";
+    return filename;
+}
+function getCsvFilename(page)
+{
+    let filename = decodeURIComponent(FILE_URI).split("/");
+        filename = filename[filename.length - 1];
+        filename = filename.replace(".pdf", "");
+        filename += "-page-" + page;
+        filename += ".csv";
+        filename = TYPE + "_" + filename;
+    return filename;
+}
+
+
+function getOriJsonUrl(page)
+{
+    let filename = getOriJsonFilename(page);
+    return getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_JSON_FOLDER + "/" +  filename;
+}
+
+function getImageUrl(page)
+{
+    let filename = getImageFilename(page);
+    return getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_IMAGE_FOLDER + "/" +  filename;
+}
+
+function getBaseFileUri()
+{
+    let uri = decodeURIComponent(FILE_URI);
+    uri = uri.replace("http://", "");
+    uri = uri.replace("https://", "");
+
+    uri = uri.split("/");
+    let host = uri[0];
+    uri = "https://" + host;
+    return uri;
+}
+
+
+
+function downloadFile(url, callback)
+{
+    $.get("/web/download/" + url, function(response){
+        if(callback != null)
+            callback(response)
+    })
+}
+
+
+
+function csv2Datatable(csvStr)
+{
+    let data = [];
+    let lines = csvStr.split("\n");
+    lines.forEach((line) => {
+        let row = [];
+        if(line.trim() != "")
+        {
+            let cells = line.split("\",\"");
+            cells.forEach((cell)=>{
+                let text = cell.replace(/\"/gi, "");
+                text = text.replace(/\r/gi, "");
+                row.push(text);
+            })
+            data.push(row);
+        }
+
+    })
+
+    return data;
+}
+
+
+function toTable(data)
+{
+    let rows = [];
+    let totalRows = data.length;
+    let totalCols = data[0].length;
+
+    for(var i = 0; i < totalRows; i++)
+    {
+        let row = [];
+        for(var j = 0; j < totalCols; j++)
+        {
+            row.push(data[i][j].text);
+        }
+        rows.push(row);
+    }
+    return rows;
+}
+
+function toCsv(table)
+{
+    console.log("TABLE")
+    console.log(table);
+
+    let stable = "";
+    table.forEach((row)=>{
+
+        row.forEach((cell)=>{
+            stable += "\"" + cell + "\",";
+        })
+        if(stable.length > 0)
+            stable = stable.substr(0, stable.length - 1);
+        stable += "\r\n"
+    })
+
+    return stable;
+}
+
+
+</script>
+</html>

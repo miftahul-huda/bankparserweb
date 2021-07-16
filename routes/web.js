@@ -3,11 +3,11 @@ var router = express.Router();
 const path = require('path');
 
 const fs = require('fs');
-const http = require('http');
+const https = require('https');
 
 var download = function(url, dest, cb) {
     var file = fs.createWriteStream(dest);
-    var request = http.get(url, function(response) {
+    var request = https.get(url, function(response) {
       response.pipe(file);
       file.on('finish', function() {
         file.close(cb);  // close() is async, call cb after close completes.
@@ -47,7 +47,7 @@ router.get('/download/:url', function(req,res){
         var data =fs.readFileSync('/tmp/temp' + ext);
         let sdata = new Buffer(data).toString('ascii');
         console.log(sdata);
-        res.contentType("application/" + ext);
+        //res.contentType("application/" + ext);
         res.send(data);
     });
 
@@ -71,8 +71,9 @@ router.get("/excel1", function(req, res){
 
 router.get("/excel2", function(req, res){
     var dir = __dirname;
+    let totalFiles = req.query.totalFiles;
     var p = path.resolve( dir, "../public/pages/", "excel2");
-    res.render(p, { config: getConfig() } )
+    res.render(p, { totalFiles: totalFiles, config: getConfig() } )
 });
 
 router.get("", function(req, res){
@@ -85,10 +86,11 @@ router.get("/page2", function(req, res){
     var uri = req.query.uri;
     var headers = req.query.headers;
     var type = req.query.type;
+    var year = req.query.year;
 
     var dir = __dirname;
     var p = path.resolve( dir, "../public/pages/", "page2");
-    res.render(p, { uri: uri, type: type, headers: headers, config: getConfig() } )
+    res.render(p, { uri: uri, type: type, headers: headers, year: year, config: getConfig() } )
 });
 
 router.get("/page3", function(req, res){
@@ -96,10 +98,18 @@ router.get("/page3", function(req, res){
     var headers = req.query.headers;
     var type = req.query.type;
     var totalPage = req.query.totalpage;
+    var year = req.query.year;
 
     var dir = __dirname;
     var p = path.resolve( dir, "../public/pages/", "page3");
-    res.render(p, { uri: uri, type: type, headers: headers, totalPage: totalPage,  config: getConfig() } )
+    res.render(p, { uri: uri, type: type, headers: headers, totalPage: totalPage, year: year, config: getConfig() } )
+});
+
+router.get("/analytic", function(req, res){
+
+    var dir = __dirname;
+    var p = path.resolve( dir, "../public/pages/", "analytic");
+    res.render(p, {  config: getConfig() } )
 });
 
 
