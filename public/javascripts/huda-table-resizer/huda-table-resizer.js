@@ -41,6 +41,7 @@ var TableResizer = {
         for(var i = 0; i < colWidths.length; i++)
         {
             $(table).find("th[col-idx="  + i + "]").width(colWidths[i]);
+            $(table).find("td[col-idx="  + i + "]").width(colWidths[i]);
         }
     }
     ,
@@ -312,7 +313,7 @@ var TableResizer = {
                 startHeight = $(this).parents(tagname).css("height");
                 console.log("startHeight")
                 console.log(startHeight)
-                $(start).addClass("resizing");
+                //$(start).addClass("resizing");
             }
         });
 
@@ -320,12 +321,21 @@ var TableResizer = {
             
             if(pressedcol) {
                 let ww  = parseFloat( startWidth)+(e.pageX-startX);
-                $(start).width(ww);
+                
+                //$(start).width(ww);
+                let colIdx = $(start).attr("col-idx");
+                let posx = parseFloat($("th[col-idx=" + colIdx + "]").position().left);
+                $("th[col-idx=" + colIdx + "]").width( ww);
+                $("td[col-idx=" + colIdx + "]").width( ww);
+                $("th[col-idx=" + colIdx + "] .coladddel-container").css("position", "absolute");
+                $("th[col-idx=" + colIdx + "] .coladddel-container").css("left", posx + (ww - 0));
             }
             if(pressedrow) {
+                console.log("here")
                 let hh  = parseFloat( startHeight)+(e.pageY-startY);
                 let rowIdx = $(start).attr("row-idx");
                 $("td[row-idx=" + rowIdx + "]").height(hh);
+                $("th[row-idx=" + rowIdx + "]").height(hh);
             }
         });
         
@@ -340,6 +350,12 @@ var TableResizer = {
             }
         });
     
+        $("th[col-idx]").each(function(){
+            let posx = parseFloat($(this).position().left);
+            let ww = parseFloat($(this).width());
+            $(this).find(".coladddel-container").css("position", "absolute");
+            $(this).find(".coladddel-container").css("left", posx + (ww - 0));
+        });
     
         $("#drag").off("mousedown");
         $("#drag").on("mousedown", function()

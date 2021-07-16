@@ -8,14 +8,25 @@
 .tbl-pdf td{
   border: solid 2px red;
   min-height: 10px;
+  min-width: 10px;
   height: 16px;
+  width: 20px;
 }
 
 .tbl-pdf th{
   border: solid 2px red;
-  height: 30px;
-  width: 100px;
+  min-height: 10px;
+  min-width: 10px;
+  height: 40px;
+  width: 20px;
 }
+/*
+.tbl-pdf th{
+  border: solid 2px red;
+  height: 30px;
+  /*width: 100px;
+}
+*/
 
 .tbl-pdf th{
   padding: 0%;
@@ -47,7 +58,7 @@
 
 .dragger-column
 {
-  width: 3px; 
+  width: 15px; 
   height: 100%; 
   border: solid 0px #ccc;
   cursor: col-resize;
@@ -63,9 +74,12 @@
 
 .coladddel-container
 {
-  display: flex; 
-  margin-top: -23px;
-  justify-content: flex-end;
+   
+  margin-top: -40px;
+  /*
+  display: flex;
+  justify-content: flex-end;*/
+  position: absolute;
 }
 
 .coladd
