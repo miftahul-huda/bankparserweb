@@ -10,7 +10,8 @@
 <style>
     .dropzone{
         border: solid 1px #ccc;
-        border-radius: 5px;
+        border-radius: 15px;
+        height: 80%;
     }
 </style>
 
@@ -18,33 +19,33 @@
 <body>
     <%- include ("./header.html") -%>
     <div class="card-body">
-        <div class="position-relative form-group">
-            <select id="doc-template" class="btn-block select2">
-                <option value="bca|Tanggal,Keterangan,CBG,Mutasi,Saldo" >BCA</option>
-                <option value="danamon|Tgl Trans,Tgl VLT,Branch,Reff,Keterangan,Debits,Credits,Balance" >Danamon</option>
-                <option value="mandiri|Datetime,Value Date,Description,Ref,Debit,Credit,Balance" >Mandiri</option>
-            </select>
-        </div>
-        <div class="position-relative form-group">
-            <select id="doc-year" class="btn-block select2">
-            </select>
-        </div>
-        <div class="position-relative form-group">
-            <label for="appname" class="">Drag drop the PDF files (or click to open files)</label>
+
+        <div class="position-relative" style="height: 500px;">
             <form   id="myDropzone" action="/file-upload" class="dropzone">
                 <div class="fallback">
                   <input name="file" type="file" multiple />
                 </div>
             </form>
+
+            <div style="position:absolute; top: 10px; opacity: 0.3; z-index: 1; margin-left: 40%; background: url(../images/pdf.png) no-repeat; background-size: 100% auto; width: 300px; height: 300px;">
+
+            </div>
+            
             <div class="position-relative form-group" style="padding: 10px">
                 <button id="btn-clear" type="button" class="btn btn-block btn-primary-2">Clear</button>
             </div>
         </div>
     </div>
     <div style="width: 95%; display: table; margin-left: 0%;">
-        <div style="width: 70%;display: table-cell;"></div>
-        <div style="width: 30%;display: table-cell;">
-            <button id="btn-next" type="button" class="btn btn-block btn-primary">Next</button>
+        <div style="width: 85%;display: table-cell;"></div>
+        <div style="display: table-cell;">
+            <button id="btn-next" type="button" class="btn btn-block btn-primary">
+                <div class="btn-text-2">
+                    Next&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </div>
+                <div class="btn-icon icon-next">
+                </div>
+            </button>
         </div>
     </div>
     <%- include ("./footer.html") -%>
@@ -152,13 +153,9 @@ $(document).ready(function()
         uri = uri.replace("gs://", "https://storage.googleapis.com/");
         uri = encodeURIComponent(uri);
 
-        let vv = $("#doc-template").val();
-        vv = vv.split("|");
-        let cols = vv[1];
-        let template = vv[0];
         //alert(cols)
 
-        location = "/web/page2?type=" + template + "&year=" + $("#doc-year").val() + "&headers=" + cols + "&uri=" + encodeURIComponent( uri);
+        location = "/web/page2?uri=" +  uri;
     })
 })
 </script>

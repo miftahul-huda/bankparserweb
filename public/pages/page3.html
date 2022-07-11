@@ -20,25 +20,43 @@
     <div class="card-body">
 
         <div id="processgif" style="position: absolute; top: 40%; left: 40%; z-index: 1000;"></div>
-        <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
-            
-            <div style="width: 10%;display: table-cell;"></div>
-            <div style="width: 10%;display: table-cell;" id="page-info"></div>
-            <div style="width: 10%;display: table-cell;"></div>
-            <div style="width: 10%;display: table-cell;">
+        <div style="display: table; margin-left: 0%; padding: 0px; float: right;">
+            <div style="display: table-cell;">
+                <button id="btn-back" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-previous">
+                    </div>
+                    <div class="btn-text">
+                        Previous
+                    </div>
+                </button>
+            </div>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div style="display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
-            <div style="width: 10%;display: table-cell;">
+            <div style="display: table-cell;padding-left: 10px;padding-right: 10px;font-size: 10pt;" id="page-info"></div>
+            <div style="display: table-cell;">
                 <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
             </div>
-            <div style="width: 15%;display: table-cell;">
-                <button id="btn-rerun" type="button" class="btn btn-block btn-secondary">Rerun OCR</button>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div style="display: table-cell;">
+                <button id="btn-rerun" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-ocr">
+                    </div>
+                    <div class="btn-text">
+                        Run Ocr
+                    </div>
+                </button>
             </div>
-            <div style="width: 10%;display: table-cell;">
-                <button id="btn-save-csv" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
-            </div
-            <div style="width: 10%;display: table-cell;">
-                <button id="btn-next" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Go to analytic&nbsp;&nbsp;&nbsp;</button>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div style="display: table-cell;">
+                <button id="btn-save-csv" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-save">
+                    </div>
+                    <div class="btn-text">
+                        Save
+                    </div>
+                </button>
             </div>
         </div>
         <div style="height: 50px;"></div>
@@ -90,21 +108,19 @@ var GCS_CSV_FOLDER = "<%=config.GCS_CSV_FOLDER %>";
 var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
 var FILE_URI = "<%=uri %>";
 var CUR_PAGE = 1;
-var HEADERS = "<%=headers %>";
-var TYPE = "<%=type %>";
 var TOTAL_PAGE = "<%=totalPage %>";
 var PREV_PAGE = 0;
-var YEAR = <%=year %>;
+
 
 $(document).ready(function()
 {
 
-    $("#processgif").show();
+    $("#processgif").hide();
     $("#tbl-result").hide();
-    $("#btn-back").hide();
+    //$("#btn-back").hide();
 
     $("#btn-back").click(function(){
-        location = "/web"
+        location = "/web/page2?uri=" + encodeURIComponent(FILE_URI);
     });
 
     $("#btn-prev-image").on("click", function(){
@@ -140,7 +156,7 @@ $(document).ready(function()
         location = "/web/analytic";
     });
     $("#page-info").html("Page : " + (CUR_PAGE) + " of " + TOTAL_PAGE)  
-    run(CUR_PAGE);
+    //run(CUR_PAGE);
 })
 
 

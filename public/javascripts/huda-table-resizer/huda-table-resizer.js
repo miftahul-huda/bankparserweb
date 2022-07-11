@@ -43,6 +43,13 @@ var TableResizer = {
             $(table).find("th[col-idx="  + i + "]").width(colWidths[i]);
             $(table).find("td[col-idx="  + i + "]").width(colWidths[i]);
         }
+
+        $("th[col-idx]").each(function(){
+            let posx = parseFloat($(this).position().left);
+            let ww = parseFloat($(this).width());
+            $(this).find(".coladddel-container").css("position", "absolute");
+            $(this).find(".coladddel-container").css("left", posx + (ww - 0));
+        });
     }
     ,
     resizeRows: function(divId, rowHeights)
@@ -348,6 +355,13 @@ var TableResizer = {
                 $(start).removeClass("resizing");
                 pressedrow = false;
             }
+
+            $("th[col-idx]").each(function(){
+                let posx = parseFloat($(this).position().left);
+                let ww = parseFloat($(this).width());
+                $(this).find(".coladddel-container").css("position", "absolute");
+                $(this).find(".coladddel-container").css("left", posx + (ww - 0));
+            });
         });
     
         $("th[col-idx]").each(function(){

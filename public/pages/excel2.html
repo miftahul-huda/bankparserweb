@@ -49,6 +49,7 @@ $(document).ready(function()
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     FOLDER = urlParams.get("folder");
+    
 
     showAll(false);
     zipFiles(FOLDER, function(path){
@@ -154,7 +155,9 @@ function displayFiles(files)
 
 function download()
 {
-    window.open("https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs/download-folder/dvt-apac-playground-3/output_excel/" + FOLDER, null)
+    let folder = FOLDER.split("/");
+    folder = folder[folder.length -1];
+    window.open("https://gcsfileuploader-v2-dot-dvt-apac-playground-3.et.r.appspot.com/upload/gcs/download-folder/dvt-apac-playground-3/output_excel/" + folder, null)
 }
 
 function getGcsFiles(callback)

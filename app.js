@@ -86,6 +86,6 @@ app.listen(port)
 
 //Initialization.initializeDatabase();
 
-console.log("Danamon POC server on  port : " + port)
+console.log("Document Parser POC server on  port : " + port)
 
 module.exports = app;

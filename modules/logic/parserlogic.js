@@ -2,7 +2,6 @@ const sharp = require('sharp');
 const fs = require('fs');
 const https = require('https');
 const vision = require('@google-cloud/vision');
-const { default: axios } = require('axios');
 const csvparse = require('csv-parse')
 const zip = require("zip-lib");
 var FormData = require('form-data');
@@ -708,6 +707,26 @@ class ParserLogic {
           
     }
 
+    static async uploadZip2GcsTemporary(zipfilepath,cb)
+    {
+        let url = process.env.UPLOAD_BASE_URL + "/upload/gcs/" + process.env.PROJECT + "/" + process.env.GCS_TEMP_ZIP_BUCKET + "/" + process.env.GCS_TEMP_ZIP_FOLDER;
+        console.log("Upload " + url)
+        var form = new FormData();
+        form.append('file', fs.createReadStream(zipfilepath));
+
+        form.submit(url, function(err, res) {
+            // res – response object (http.IncomingMessage)  //
+            //res.resume();
+            console.log("Upload is successful");
+
+            if(err != null)
+                console.log(err)
+            if(cb != null)
+                cb()
+        });
+          
+    }
+
     static createNameFile(data, folder)
     {
         let s = data.names;
@@ -715,7 +734,7 @@ class ParserLogic {
 
     }
 
-    static async analyze(data)
+    static async analyze(data, noanalytic = false)
     {
         let promise = new Promise((resolve, reject)=>{
 
@@ -730,16 +749,34 @@ class ParserLogic {
                 let bpfilezip = "bankparser-" + this.makeid(5) + ".zip";
                 zip.archiveFolder(result.mergedFolder, "/tmp/" + bpfilezip ).then(function () {
 
-                    ParserLogic.uploadZip2Gcs("/tmp/" + bpfilezip, function(){
-                        console.log("done");
-                        result.zipFile ="/tmp/" + bpfilezip;
-                        ParserLogic.releaseResources(result);
-                        
-                        let res = { PROJECT: process.env.PROJECT, BUCKET: process.env.GCS_ZIP_BUCKET, PATH: process.env.GCS_ZIP_FOLDER + "/" + bpfilezip }
-                        
-                        console.log(res);
-                        resolve(res )
-                    });
+                    if(noanalytic != true)
+                    {
+                        ParserLogic.uploadZip2Gcs("/tmp/" + bpfilezip, function(){
+                            console.log("done");
+                            result.zipFile ="/tmp/" + bpfilezip;
+                            ParserLogic.releaseResources(result);
+                            
+                            let res = { PROJECT: process.env.PROJECT, BUCKET: process.env.GCS_ZIP_BUCKET, PATH: process.env.GCS_ZIP_FOLDER + "/" + bpfilezip }
+                            
+                            console.log(res);
+                            resolve(res )
+                        });
+
+                    }
+                    else
+                    {
+                        ParserLogic.uploadZip2GcsTemporary("/tmp/" + bpfilezip, function(){
+                            console.log("done");
+                            result.zipFile ="/tmp/" + bpfilezip;
+                            ParserLogic.releaseResources(result);
+                            
+                            let res = { PROJECT: process.env.PROJECT, BUCKET: process.env.GCS_TEMP_ZIP_BUCKET, PATH: process.env.GCS_TEMP_ZIP_FOLDER + "/" + bpfilezip }
+                            
+                            console.log(res);
+                            resolve(res )
+                        });                     
+                    }
+ 
                     
                 }, function (err) {
                     console.log(err);
@@ -750,6 +787,8 @@ class ParserLogic {
 
         return promise;
     }
+
+    
 
     
 

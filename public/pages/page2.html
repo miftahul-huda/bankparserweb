@@ -8,9 +8,10 @@
 <script src="../javascripts/pdf/pdf.worker.js"></script>
 
 <script src="../javascripts/huda-table-resizer/huda-table-resizer.js"></script>
+<script src="../javascripts/huda-table-editor.js"></script>
 <link href="../javascripts/huda-table-resizer/huda-table-resizer.css" rel="stylesheet" />
 
-
+<script src="../javascripts/pages/page2.js"></script>
 
 </head>
 <body>
@@ -22,41 +23,149 @@
         </div>
         <div id="processgif" style="position: absolute; top: 40%; left: 40%; z-index: 1000;"></div>
 
-        <div style="width: 90%; display: table; margin-left: 0%; padding: 0px;">
-            <div style="width: 5%;display: table-cell;"></div>
-            <div style="width: 10%;display: table-cell;">
-                <button id="btn-autodetect" type="button" class="btn btn-block btn-secondary">Autodetect</button>
+        <div style="display: table; margin-left: 0%; padding: 0px; z-index: 1000;">
+            <div class="btn-container">
+                <button id="btn-back" type="button" class="btn btn-secondary">
+                    <div class="btn-icon-2 icon-home">
+                    </div>
+                </button>
             </div>
-            <div style="width: 15%;display: table-cell;">
-                <button id="btn-create-table" type="button" class="btn btn-block btn-secondary">Manual Table</button>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-parseform" type="button" class="btn btn-secondary">
+                    <div class="btn-icon icon-form">
+                    </div>
+                    <div class="btn-text">
+                        Parse Form
+                    </div>
+                </button>
+            </div>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-autodetect" type="button" class="btn btn-secondary">
+                    <div class="btn-icon icon-table">
+                    </div>
+                    <div class="btn-text">
+                        Automatically Detect Table
+                    </div>
+                </button>
+            </div>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-create-table" type="button" class="btn btn-secondary">
+                    <div class="btn-icon icon-manual">
+                    </div>
+                    <div class="btn-text">
+                        Manual Table
+                    </div>
+                </button>
+            </div>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-parsetable" type="button" class="btn btn-secondary">
+                    <div class="btn-icon icon-gear">
+                    </div>
+                    <div class="btn-text">
+                        Parse Table
+                    </div>
+                    
+                </button>
             </div>
             
-            <div style="width: 15%;display: table-cell;">
-                <button id="btn-clear-table" type="button" class="btn btn-block btn-secondary">Clear table</button>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-clear-table" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-clear">
+                    </div>
+                    <div class="btn-text">
+                        Clear table
+                    </div>
+                </button>
             </div>
-           
-            <div style="width: 10%;display: table-cell;padding-left: 10px;" id="page-info">Page</div>
-
-            <div style="width: 10%;display: table-cell;">
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-save">
+                    </div>
+                    <div class="btn-text">
+                        Save
+                    </div>
+                </button>
+            </div>
+            <div style="width: 1px;display: table-cell;"></div>
+            <div class="btn-container">
+                <button id="btn-download" type="button" class="btn btn-block btn-secondary">
+                    <div class="btn-icon icon-download">
+                    </div>
+                    <div class="btn-text">
+                        Download Results
+                    </div>
+                </button>
+            </div>
+            <div style="width: 60px;display: table-cell;"></div>
+            <div style="display: table-cell;">
                 <button id="btn-prev-image" type="button" class="btn btn-block btn-secondary"><<</button>
             </div>
-
-            <div style="width: 10%;display: table-cell;">
+            <div style="display: table-cell;padding-left: 10px; padding-right: 10px; font-size: 9pt;" id="page-info">Page</div>
+            <div style="display: table-cell;">
                 <button id="btn-next-image" type="button" class="btn btn-block btn-secondary">>></button>
             </div>
-  
-            <div style="width: 10%;display: table-cell;">
-                <button id="btn-save-table" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Save&nbsp;&nbsp;&nbsp;</button>
-            </div>
-            <div style="width: 15%;display: table-cell;">
-                <button id="btn-next" type="button" class="btn btn-block btn-secondary">&nbsp;&nbsp;&nbsp;Go to OCR&nbsp;&nbsp;&nbsp;</button>
-            </div>
-        </div>
-        <div id="pdf-main-container" style=" width: 100%;">
-            <canvas style="position: absolute; left: 100px; top: 400px;" id="pdf-canvas" width="400"></canvas>
         </div>
 
-        <div id="divPdfTable"></div>
+        <div style="height: 30px;">
+
+        </div>
+
+        <div style="width: 100%;border: solid 0px #ccc;">
+            <div id="right-displayer" style="display: inline-block; width: 45%;height: 1000px;  border: solid 2px #ccc; vertical-align: top;">
+                <canvas id="pdf-canvas"></canvas>
+                <div id="divPdfTable" style="display: table-cell; width: 50%"></div>
+                <div id="form-boxes" style="width: 100%; height: 1000px;"></div>
+            </div>
+
+            
+            <div style="display: inline-block; width: 5%;"></div>
+            <div style="display: inline-block; width: 45%;height: 1000px;  border: solid 0px #ccc;">
+
+                <div class="card card-primary card-outline card-outline-tabs">
+                    <div class="card-header p-0 border-bottom-0">
+                      <ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
+                        <li class="nav-item">
+                          <a class="nav-link active" id="custom-tabs-three-home-tab" data-toggle="pill" href="#form-content" role="tab" aria-controls="custom-tabs-three-home" aria-selected="true">Form</a>
+                        </li>
+                        <li class="nav-item">
+                          <a class="nav-link" id="custom-tabs-three-profile-tab" data-toggle="pill" href="#table-content" role="tab" aria-controls="custom-tabs-three-profile" aria-selected="false">Table</a>
+                        </li>
+                        <li class="nav-item">
+                          <a class="nav-link" id="custom-tabs-three-messages-tab" data-toggle="pill" href="#json-content" role="tab" aria-controls="custom-tabs-three-messages" aria-selected="false">Json</a>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="card-body">
+                      <div class="tab-content" id="custom-tabs-three-tabContent">
+                        <div id="form-content" class="tab-pane fade show active" id="custom-tabs-three-home" role="tabpanel" aria-labelledby="custom-tabs-three-home-tab">
+                           Form content
+                        </div>
+                        <div id="table-content" class="tab-pane fade" id="custom-tabs-three-profile" role="tabpanel" aria-labelledby="custom-tabs-three-profile-tab">
+                          table content
+                        </div>
+                        <div id="json-content" class="tab-pane fade" id="custom-tabs-three-messages" role="tabpanel" aria-labelledby="custom-tabs-three-messages-tab">
+                          <textarea id="json-area" style="width: 100%; height: 500px; border: solid 1px #ccc;"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- /.card -->
+                  </div>
+                </div>
+
+            </div>
+        </div>
+
+       
+        
+        
+
+        
 
     </div>
         
@@ -79,9 +188,7 @@ var PDF = null;
 var CUR_PAGE = 1;
 var PAGE=  null;
 var PDFJS = null;
-var HEADERS = "<%=headers %>";
-var TYPE = "<%=type %>";
-var YEAR = <%=year %>;
+
 
 function showPDF2(url, callback)
 {
@@ -110,7 +217,8 @@ function showPDF2(url, callback)
 
     }, function (reason) {
     // PDF loading error
-    console.error(reason);
+        console.error(reason);
+        alert(reason.message)
     });
 }
 
@@ -123,7 +231,7 @@ function openPage(pdf, pageNumber, callback)
         console.log('Page loaded');
         PAGE = page;
         
-        var scale = 1.5;
+        var scale = 1;
         var viewport = page.getViewport({scale: scale});
 
         // Prepare canvas using PDF page dimensions
@@ -151,30 +259,55 @@ function openPage(pdf, pageNumber, callback)
 
 $(document).ready(function()
 {
+    Page2.PROJECT = "<%=config.PROJECT %>";
+    Page2.GCS_BUCKET = "<%=config.GCS_BUCKET %>";
+    Page2.GCS_PDF_FOLDER = "<%=config.GCS_PDF_FOLDER %>";
+    Page2.GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
+    Page2.GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
+    Page2.UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+    Page2.FILE_URI = "<%=uri %>";
+
+    $(document.body).on("mouseover", function(evt){
+        //console.log(evt.pageX)
+    })
     $("#processgif").hide();
-    var uri = "<%=uri %>";
+    var uri = Page2.FILE_URI;
     console.log("uri")
     console.log(uri)
 
     //uri = decodeURIComponent(uri);
-    uri = "/web/download/" + uri;
+    uri = "/web/download/" + encodeURIComponent(uri);
 
     console.log(uri);
 
     $("#processgif").show();
-    showPDF2(uri, function()
+    Page2.showPDF2(uri, function()
     {
-        retrieveJson();
-        $("#processgif").hide();
+        Page2.retrieveJson(function(){
+            Page2.retrieveResultJson(function(json){
+
+                console.log("result")
+                console.log(json)
+                Page2.displayResultJson(json);
+                $("#processgif").hide();
+            }, function(err){
+                $("#processgif").hide();
+            })
+           
+        });
+        
     });
 
+    $("#btn-back").on("click", function(){
+        location = "/web";
+    });
 
     $("#btn-next").on("click", function()
     {
         $("#processgif").show();
-        saveTable("divPdfTable", function(){
-            let totalPage = PDF.numPages;
-            let url = "/web/page3?type=" + TYPE + "&totalpage=" + totalPage + "&year=" + YEAR + "&headers=" + HEADERS + "&uri=<%=uri%>";
+        Page2.saveTable("divPdfTable", function(){
+            let totalPage = Page2.PDF.numPages;
+            let url = "/web/page3?totalpage=" + totalPage + "&uri=<%=uri%>";
 
             $("#processgif").hide();
             location = url;
@@ -183,10 +316,14 @@ $(document).ready(function()
 
     $("#btn-save-table").off("click");
     $("#btn-save-table").on("click", function(){
-        $("#progressgif").show();
-        savePDFImage(function(response){
-            saveTable("divPdfTable", function(){
-                alert("Saved");
+        $("#processgif").show();
+        Page2.savePDFImage(function(response){
+            Page2.saveTable("divPdfTable", function(){
+                Page2.saveResult(function(){
+                    $.notify("Saved", "success")
+                    $("#processgif").hide();
+                })
+                
             })
         })
 
@@ -194,52 +331,52 @@ $(document).ready(function()
     });
 
     $("#btn-prev-image").on("click", function(){
-        saveTable("divPdfTable", function()
+        Page2.saveTable("divPdfTable", function()
         {
-            CUR_PAGE--;
+            Page2.CUR_PAGE--;
             console.log("CUR_PAGE");
             console.log(CUR_PAGE);
-            if(CUR_PAGE < 1)
-                CUR_PAGE = 1;
-            $("#page-info").html("Page : " + CUR_PAGE + " of " + PDF.numPages);
-            openPage(PDF, CUR_PAGE);
-            retrieveJson();
+            if(Page2.CUR_PAGE < 1)
+                Page2.CUR_PAGE = 1;
+            $("#page-info").html("Page : " + Page2.CUR_PAGE + " of " + Page2.PDF.numPages);
+            Page2.openPage(Page2.PDF, Page2.CUR_PAGE);
+            Page2.retrieveJson();
         });
 
     })
 
     $("#btn-next-image").on("click", function(){
-        saveTable("divPdfTable", function()
+        Page2.saveTable("divPdfTable", function()
         {
             TableResizer.clearTable("divPdfTable")
-            CUR_PAGE++;
+            Page2.CUR_PAGE++;
             console.log("CUR_PAGE");
-            console.log(CUR_PAGE);
-            if(CUR_PAGE > PDF.numPages)
-                CUR_PAGE = PDF.numPages;
-            $("#page-info").html("Page : " + CUR_PAGE + " of " + PDF.numPages);
-            openPage(PDF, CUR_PAGE);        
-            retrieveJson();
+            console.log(Page2.CUR_PAGE);
+            if(Page2.CUR_PAGE > Page2.PDF.numPages)
+                Page2.CUR_PAGE = Page2.PDF.numPages;
+            $("#page-info").html("Page : " + Page2.CUR_PAGE + " of " + Page2.PDF.numPages);
+            Page2.openPage(Page2.PDF, Page2.CUR_PAGE);        
+            Page2.retrieveJson();
         });
 
     })
 
     $("#btn-autodetect").on("click", function(){
         //TableResizer.createResizedTable("divPdfTable", 5, 5);
-        autoDetect();
+        Page2.autoDetect();
     })
 
     $("#btn-create-table").on("click", function(){
         //TableResizer.createResizedTable("divPdfTable", 5, 5);
 
-        savePDFImage(function(response)
+        Page2.savePDFImage(function(response)
         {
             console.log(response);
             let imageurl = response.payload;
 
             TableResizer.createResizedTable("divPdfTable", 7, 10);
-            $("#divPdfTable").css("left", TABLELEFT)
-            $("#divPdfTable").css("top", TABLETOP)
+            $("#divPdfTable").css("left", Page2.TABLELEFT)
+            $("#divPdfTable").css("top", Page2.TABLETOP)
         });
     })
 
@@ -247,152 +384,29 @@ $(document).ready(function()
         TableResizer.clearTable("divPdfTable");
     })
 
-    
+    $("#btn-parseform").on("click", function(){
+        
+        $("#processgif").show();
+        Page2.parseForm(function(forms){
+            Page2.displayForm(forms)
+            $("#processgif").hide();
+        });
+    })
+
+    $("#btn-parsetable").on("click", function(){
+        
+        $("#processgif").show();
+        Page2.ocr(Page2.CUR_PAGE, function(){
+            $("#processgif").hide();
+        });
+    })
+
+    $("#btn-download").on("click", function(){
+        Page2.downloadResults();
+    })
 
 })
 
-var TABLELEFT = 207;
-var TABLETOP = 586;
-
-function autoDetect(callback)
-{
-    $("#processgif").show();
-    savePDFImage(function(response)
-    {
-        console.log(response);
-        let imageurl = response.payload;
-        imageurl = imageurl.replace("gs://", "https://storage.googleapis.com/");
-        console.log(imageurl);
-        
-        let url = "/table/parse/" + encodeURIComponent(imageurl);
-        console.log(url);
-        $.get(url, function(response){
-            console.log(response);
-
-            if(response.success)
-            {
-                resizeTableColumns(response.payload.xBoxes, response.payload.yBoxes)
-                resizeTableRows(response.payload.xBoxes, response.payload.yBoxes)
-
-                $("#divPdfTable").css("left", TABLELEFT)
-                $("#divPdfTable").css("top", TABLETOP)
-            }
-            else
-            {
-                alert("Autodetect fail")
-                TableResizer.createResizedTable("divPdfTable", 7, 10);
-                $("#divPdfTable").css("left", TABLELEFT)
-                $("#divPdfTable").css("top", TABLETOP)
-            }
-
-
-            $("#processgif").hide();
-        });
-        
-    });
-}
-
-function resizeTableColumns(xBoxes, yBoxes)
-{
-    let rowcount = yBoxes.length;
-    let prevItem = null;
-    let colWidths = [];
-    xBoxes.forEach((item)=>{
-        if(prevItem != null)
-        {
-            colWidths.push( item.boundaryX - prevItem.boundaryX )
-        }
-        prevItem = item;
-    })
-    colWidths.push( xBoxes[xBoxes.length - 1].w + 30 );
-    console.log(colWidths);
-    TableResizer.createResizedTable("divPdfTable", colWidths.length, rowcount);
-    TableResizer.resizeColumns("divPdfTable", colWidths);
-}
-
-function resizeTableRows(xBoxes, yBoxes)
-{
-    let rowcount = yBoxes.length;
-    let prevItem = null;
-    let rowHeights = [];
-    yBoxes.forEach((item)=>{
-        if(prevItem != null)
-        {
-            rowHeights.push( item.y - prevItem.y - 5)
-        }
-        prevItem = item;
-    })
-    //rowHeights.push( items[items.length - 1].w + 30 );
-    console.log(rowHeights);
-    TableResizer.resizeRows("divPdfTable", rowHeights);
-}
-
-function getCurrentImageFilename()
-{
-    let filename = decodeURIComponent(FILE_URI).split("/");
-        filename = filename[filename.length - 1];
-        filename = filename.replace(".pdf", "");
-        filename += "-page-" + CUR_PAGE;
-        filename += ".png";
-    return filename;
-}
-
-function savePDFImage(callback)
-{
- 
-    var page  = PAGE;
-
-    var canvas = document.getElementsByTagName("canvas")[0];
-    let imageData = canvas.toDataURL('image/png');
-
-    let filename = getCurrentImageFilename();
-    let originalFilename = filename;
- 
-
-    var ImageURL = imageData;
-    // Split the base64 string in data and contentType
-    var block = ImageURL.split(";");
-    // Get the content type of the image
-    var contentType = block[0].split(":")[1];// In this case "image/gif"
-    // get the real base64 content of the file
-    var realData = block[1].split(",")[1];// In this case "R0lGODlhPQBEAPeoAJosM...."
-
-    // Convert it to a blob to upload
-    var blob = b64toBlob(realData, contentType);
-
-    let form  = document.createElement("form");
-
-    // Create a FormData and append the file with "image" as parameter name
-    var formDataToUpload = new FormData(form);
-    formDataToUpload.append("file", blob, originalFilename);
-
-    var url = UPLOAD_BASE_URL + "/upload/gcs/" + PROJECT + "/" + GCS_BUCKET + "/" + GCS_IMAGE_FOLDER;
-
-    // Submit Form and upload file
-    $.ajax({
-                url:url,
-                data: formDataToUpload,// the formData function is available in almost all new browsers.
-                type:"POST",
-                contentType:false,
-                processData:false,
-                cache:false,
-                dataType:"json", // Change this according to your response from the server.
-                error:function(err){
-                    console.error(err);
-                },
-                success:function(data){
-                    console.log(data);
-                    if(callback != null)
-                        callback(data);
-                },
-                complete:function(){
-                    
-                    console.log("Request finished.");
-                }
-            });
-    
-    //console.log(imageData);
-}
 
 function redirectPost(url, param)
 {
@@ -403,199 +417,9 @@ function redirectPost(url, param)
     form.submit();
 }
 
-function getBaseFileUri()
-{
-    let uri = decodeURIComponent(FILE_URI);
-    uri = uri.replace("http://", "");
-    uri = uri.replace("https://", "");
 
 
-    uri = uri.split("/");
-    let host = uri[0];
-    uri = "https://" + host;
-    return uri;
-}
 
-function retrieveJson( callback)
-{
-    let jsonFilename =  getJsonFilename();
-    let downloadUrl = getBaseFileUri() + "/" + GCS_BUCKET + "/" + GCS_JSON_FOLDER + "/" + jsonFilename;
-    downloadUrl = encodeURIComponent(downloadUrl);
-
-    TableResizer.clearTable("divPdfTable")
-    let uri = "/web/download/" + downloadUrl;
-
-    console.log("retrieveJson")
-    console.log(uri);
-
-    $.get(uri, function(response){
-        let isJson = false;
-        console.log(response)
-
-        try
-        {
-            response = JSON.parse(response);
-            isJson = true;
-        }
-        catch(err)
-        {
-            isJson = false;
-            console.log("Json parse error ")
-            console.log(err);
-        }
-
-        if( typeof response == 'object')
-            isJson = true;
-        else
-            isJson = false;
-        
-        
-        if(response != null && isJson)
-        {
-            console.log(response)
-            TableResizer.createResizedTableByInfo("divPdfTable", response);
-        }
-        else
-        {
-            TableResizer.clearTable("divPdfTable");
-            //TableResizer.createResizedTable("divPdfTable", 5, 5);
-        }
-    });
-}
-
-
-function rowsToBoxes(rows)
-{
-    let boexes = [];
-    rows.forEach((row)=>{
-        row.forEach((cell)=>{
-            boexes.push({ x: cell.x, y: cell.y, w: cell.width, h: cell.height })
-        })
-    })
-
-    return boexes;
-}
-
-function getJsonFilename()
-{
-    let filename = decodeURIComponent(FILE_URI).split("/");
-    filename = filename[filename.length - 1];
-    filename = filename.replace(".pdf", ".json");
-    let tmpfilename = filename.replace(".json", "");
-    tmpfilename += "-page-" + CUR_PAGE;
-    tmpfilename += ".json";
-    filename = tmpfilename;
-
-    return filename;
-}
-
-function getOriJsonFilename()
-{
-    let filename = decodeURIComponent(FILE_URI).split("/");
-    filename = filename[filename.length - 1];
-    filename = filename.replace(".pdf", ".json");
-    let tmpfilename = filename.replace(".json", "");
-    tmpfilename += "-page-ori-" + CUR_PAGE;
-    tmpfilename += ".json";
-    filename = tmpfilename;
-    return filename;
-}
-
-function uploadJsonFile(filename, content, callback)
-{
-    let filepath = GCS_JSON_FOLDER + "/" + filename;
-    filepath = encodeURIComponent(filepath);
-
-    var url = UPLOAD_BASE_URL + "/upload/gcs-create-file/" + PROJECT + "/" + GCS_BUCKET + "/" + filepath;
-    console.log("create file url");
-    console.log(url);
-
-    let sJson = JSON.stringify({
-        content: JSON.stringify(content)
-    });
-
-    $.post(url, sJson, function(response){
-        console.log(response);
-        if(callback != null)
-            callback(response);
-    })
-
-}
-
-function getTableInformationOriginal(divId)
-{
-    let canvasX = $("#pdf-canvas").position().left;
-    let canvasY = $("#pdf-canvas").position().top;
-    //let containerWidth = $("#pdf-main-container").width();
-    //canvasX = 11/100 * $(document).width();
-
-    let info2 = TableResizer.getTableInformation(divId, { marginLeft: canvasX, marginTop: canvasY});
-    return info2;
-
-}
-
-function saveTable(divId, callback)
-{
-    if($("#" + divId).html() != "")
-    {
-
-        $("#processgif").show();
-        let info = TableResizer.getTableInformation(divId);
-        let info2 = getTableInformationOriginal(divId);
-
-        console.log("========Info========")
-        console.log(JSON.stringify(info))
-        console.log("============End of Info===========")
-
-        let boxes = rowsToBoxes(info2.rows);
-
-        console.log("========BOXES START==========")
-        console.log(JSON.stringify(boxes));
-        console.log("========BOXES END ==========")
-
-        let filename = getJsonFilename();
-        uploadJsonFile(filename, info, function()
-        {
-            filename = getOriJsonFilename();
-            uploadJsonFile(filename, info2, function(){
-                $("#processgif").hide();
-                if(callback != null)
-                    callback();
-            });
-            
-        })
-    }
-    else
-    {
-        if(callback != null)
-            callback();
-    }
-}
-
-
-function b64toBlob(b64Data, contentType, sliceSize) {
-        contentType = contentType || '';
-        sliceSize = sliceSize || 512;
-
-        var byteCharacters = atob(b64Data);
-        var byteArrays = [];
-
-        for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-            var slice = byteCharacters.slice(offset, offset + sliceSize);
-
-            var byteNumbers = new Array(slice.length);
-            for (var i = 0; i < slice.length; i++) {
-                byteNumbers[i] = slice.charCodeAt(i);
-            }
-
-            var byteArray = new Uint8Array(byteNumbers);
-
-            byteArrays.push(byteArray);
-        }
-
-      var blob = new Blob(byteArrays, {type: contentType});
-      return blob;
-}
 
 
 </script>

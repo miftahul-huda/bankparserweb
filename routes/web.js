@@ -46,7 +46,7 @@ router.get('/download/:url', function(req,res){
     download(url, "/tmp/temp" + ext, ()=>{
         var data =fs.readFileSync('/tmp/temp' + ext);
         let sdata = new Buffer(data).toString('ascii');
-        console.log(sdata);
+        //console.log(sdata);
         //res.contentType("application/" + ext);
         res.send(data);
     });

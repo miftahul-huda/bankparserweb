@@ -1,13 +1,19 @@
-
-
-a {
-  color: #00B7FF;
+div
+{
+  font-family: 'Roboto', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
+a {
+  color: #515e81;
+}
 
+.card-body
+{ 
+  padding: 2%;
+}
 
 .btn-primary {
-  background-color: #2DB5E0;
+  background-color: #515e81;
   border: 0px solid;
 }
 
@@ -17,17 +23,17 @@ a {
 }
 
 .btn-primary:hover {
-  background-color: #2DB5E0;
+  background-color: #515e81;
   border: 0px solid;
 }
 
 .btn-primary:not( :hover ) {
-  background-color: #2DB5E0;
+  background-color: #515e81;
   border: 0px solid;
 }
 
 .btn-primary:active {
-  background-color: #2DB5E0;
+  background-color: #515e81;
   border: 0px solid;
 }
 
@@ -39,6 +45,11 @@ a {
 
 .btn{
   border-radius: 0%;
+  display: table;
+  height: 35px;
+  background-color: #6C757D;
+  color: #fff;
+  display: table;
 }
 
 .btn-navigation
@@ -78,3 +89,106 @@ a {
   color: #000;
 }
 
+.btn-icon
+{
+  min-width: 20px;
+  width: auto;
+  height: 100%;
+  
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  display: table-cell;
+  
+}
+.btn-icon > div
+{
+
+}
+
+.btn-container
+{
+  display: table-cell;
+  vertical-align: top;
+}
+
+.btn-icon-2
+{
+  width: 20px;
+  height: 20px;
+  
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  display: table-cell;
+}
+
+.btn-text
+{
+  display: table-cell;
+  min-width: 100px;
+  text-align: left;
+  padding-left: 6px;
+  font-size: 10pt;
+}
+
+.btn-text-2
+{
+  display: table-cell;
+  width: 0;
+  text-align: left;
+  padding-left: 0px;
+}
+
+.icon-gear
+{
+  background-image: url(../images/gear.png);
+}
+
+.icon-next
+{
+  background-image: url(../images/next.png);
+}
+
+.icon-home
+{
+  background-image: url(../images/home.png);
+}
+
+.icon-form
+{
+  background-image: url(../images/form.png);
+}
+
+.icon-table
+{
+  background-image: url(../images/table.png);
+}
+
+.icon-manual
+{
+  background-image: url(../images/manual.png);
+}
+
+.icon-clear
+{
+  background-image: url(../images/clear.png);
+}
+
+.icon-save
+{
+  background-image: url(../images/save.png);
+}
+
+.icon-ocr
+{
+  background-image: url(../images/ocr.png);
+}
+
+.icon-previous
+{
+  background-image: url(../images/previous.png);
+}
+
+.icon-download
+{
+  background-image: url(../images/downloading.png);
+}

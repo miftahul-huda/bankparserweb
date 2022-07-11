@@ -1,5 +1,6 @@
 [
     { "path" :  "/web", "router"  : "./routes/web" },
     { "path" :  "", "router"  : "./routes/web" },
-    { "path" :  "/table", "router"  : "./routes/table" }
+    { "path" :  "/table", "router"  : "./routes/table" },
+    { "path" :  "/formparser", "router"  : "./routes/formparser" }
 ]

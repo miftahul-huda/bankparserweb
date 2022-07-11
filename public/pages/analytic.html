@@ -43,9 +43,13 @@
     <div style="height: 20px;"></div>
 
     <div style="width: 95%; display: table; margin-left: 0%;">
-        <div style="width: 60%;display: table-cell;"></div>
+        <div style="width: 40%;display: table-cell;"></div>
         <div style="width: 15%;display: table-cell;">
             <button id="btn-back" type="button" class="btn btn-block btn-primary">Back</button>
+        </div>
+        <div style="width: 1%;display: table-cell;"></div>
+        <div style="width: 15%;display: table-cell;">
+            <button id="btn-download" type="button" class="btn btn-block btn-primary">Download OCR</button>
         </div>
         <div style="width: 1%;display: table-cell;"></div>
         <div style="width: 15%;display: table-cell;">
@@ -81,6 +85,7 @@ var GCS_IMAGE_FOLDER = "<%=config.GCS_IMAGE_FOLDER %>";
 var GCS_JSON_FOLDER = "<%=config.GCS_JSON_FOLDER %>";
 var GCS_CSV_FOLDER = "<%=config.GCS_CSV_FOLDER %>";
 var UPLOAD_BASE_URL = "<%=config.UPLOAD_BASE_URL %>";
+
 var PREV_PAGE = 0;
 
 $(document).ready(function()
@@ -100,6 +105,10 @@ $(document).ready(function()
             alert(result.message);
         else
             sendToAnalytic();
+    })
+
+    $("#btn-download").click(function(){
+        downloadRaw();
     })
 
     /*|let link = "<button class='btn btn-block btn-secondary'>Download</button>";
@@ -131,8 +140,6 @@ function validate()
 
     if(names.length == 0)
         return { success: false, message: "Please, enter the name input"};
-    else if(isalphanumeric == false)
-        return { success: false, message: "Please input letter and number only"}
     else if(totFiles == 0)
         return { success: false, message: "Please select files"}
 
@@ -315,6 +322,37 @@ function waitForResult(path)
             }
         })
     }, 5000)
+}
+
+function downloadRaw()
+{
+    let files = getSelectedFiles();
+    console.log(files);
+    let names = $("#names").val();
+    let data = {};
+    data.files = files;
+    data.names = names;
+
+    $("#processgif").show();
+    console.log(data);
+    
+    $.post("/table/analytic/no-analytic", JSON.stringify(data), function(response)
+    {
+        console.log(response);
+        let payload = response.payload;
+
+        //let url = UPLOAD_BASE_URL + "/upload/gcs/download/" + payload.PROJECT + "/" + payload.BUCKET + "/" + encodeURIComponent(payload.PATH);
+        //let link = "<button class='btn btn-block btn-secondary' onclick=\"window.open('" + url + "')\" >Download " + payload.PATH + "</button>";
+        //$("#link").html(link);
+        $("#processgif").hide();
+
+        let path = payload.PATH;
+        let urlRaw  = UPLOAD_BASE_URL + "/upload/gcs/download/" + PROJECT + "/" + payload.BUCKET + "/" + encodeURIComponent(path);
+        window.open(urlRaw, null);
+
+        //waitForResult(payload.PATH);
+        
+    })
 }
 
 function addDownloadButtons(path)
